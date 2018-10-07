@@ -6,13 +6,13 @@ title: Testing your UI using method swizzling
 Bugs come in many forms, and one of the classics is when our app's UI is messed up by rendering data that is
 either much larger or much smaller than we expected during development. For example, if you've ever done work on an app, chances are good you've come across a label which overlaps other elements when it's text gets too long, or clips the text in some unexpected, unwanted way. In this post, I'm going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called *method swizzling*.
 
-###### Method swizzling
+### Method swizzling
 
 In short, swizzling is a technique available through the *Objective C runtime* library, which allows you to make a swap so that the *selector*, or name, of method *m1* points to the implementation of another method *m2*, and vice versa. I won't go into detail about swizzling or the Objective C runtime in general in this article, but I really recommend reading [Apple's documentation](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008048) on the matter, to get a feeling for the extremely dynamic nature of what goes on under the hood when you develop using iOS and macOS frameworks. More of that stuff in a future post!
 
 To give an example of how swizzling could be used: With a few lines of code we could replace the ```viewDidLoad()``` implementation of every single instance of UIViewController, so that every time it is called on a UIViewController or any of it's subclasses, our customized version that we might wanna call ```swizzledViewDidLoad()``` would be executed instead. Note that this is different from overriding a method in a subclass, since we by swizzling can replace the implementations of the actual base classes in Apple's closed source frameworks such as UIKit and Foundation. Cool stuff for sure!
 
-###### Testing labels
+### Testing labels
 
 To help us debug our UI in order to detect nasty UILabel bugs, we are going to replace the method that is called when setting the text property of a UILabel
 
@@ -88,7 +88,7 @@ Note that our method seems to call itself with the *replacementText* we've defin
 
 Remember that we swapped names for UILabel's text setter, and our own method. So when ```label.text``` is invoked in our code, the implementation of ```setReallyLongText``` is executed, and when ```setReallyLongText``` is invoked in our code, the implementation of ```label.text``` is executed. So the above method hijacks the text setter method, replaces the string passed to it, and then passes this new string along to the original setter.
 
-###### With great power comes great responsibility
+### With great power comes great responsibility
 
 Although method swizzling might seem bordering on black magic, using it in your code should not be a problem as far as getting your app to App Store is concerned. However, it's still something that could seriously mess up your code if you don't tread with caution. Since we have no idea what the actual implementation of methods in UIKit or Foundation look like, there's a risk of swizzling away some very important functionality which will cause trouble down the road. It's likely a good idea to call the original implementation in your hijacked method unless you have a very good reason not too. And unless you *really* know what you're doing, it's probably a good idea *not* use this stuff in production.
 
@@ -102,7 +102,7 @@ UILabel.swizzleSetReallyLongText()
 #endif
 ```
 
-###### Other uses of swizzling
+### Other uses of swizzling
 
 Hopefully this post can serve as an inspiration for coming up with other ways to use swizzling for debugging purposes. One use case could be if you wanted to log something whenever a certain method is invoked. For example, you might want to know whenever ```viewDidLoad()``` is called in your app's different view controllers. Instead of adding logging code to every single view controller class, you could easily hijack ```viewDidLoad()``` on UIViewController and add your logging code there.
 
@@ -121,4 +121,4 @@ extension UIViewController {
 }
 ```
 
-I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading! 
+I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!
