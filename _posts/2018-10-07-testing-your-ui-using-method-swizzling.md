@@ -3,6 +3,8 @@ layout: post
 title: Testing your UI using method swizzling
 ---
 
+###### Syntax highlighting powered by [Splash](https://github.com/JohnSundell/Splash)
+
 Bugs come in many forms, and one of the classics is when our app's UI is messed up by rendering data that is
 either much larger or much smaller than we expected during development. For example, if you've ever done work on an app, chances are good you've come across a label which overlaps other elements when it's text gets too long, or clips the text in some unexpected, unwanted way. In this post, I'm going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called *method swizzling*.
 
@@ -16,15 +18,15 @@ To give an example of how swizzling could be used: With a few lines of code we c
 
 To help us debug our UI in order to detect nasty UILabel bugs, we are going to replace the method that is called when setting the text property of a UILabel
 
-```swift
+{% splash %}
 label.text = "This text will be swizzled away!"
-```
+{% endsplash %}
 
 The reason for doing this is that we want to define a really long text with great potential to mess up the UI, and we want to be able to make every single label in the app show this text simultaneously, whether a base class or a subclass instance. In this way we can easily see how long strings are handled as our UI evolves. What's nice about using swizzling in this case, is that we can accomplish what we want without having to make any changes to the call sites where our labels are used. This of course saves us time and prevents us from polluting our code with debug-specific stuff.
 
 Basically, we're just going to use 2 methods from the Objective C Runtime library:
 
-```swift
+{% splash %}
 //Gets a reference to the method in class 'cls' with the name 'name'
 func class_getInstanceMethod(_ cls: AnyClass?,
                            _ name: Selector) -> Method?
@@ -32,16 +34,14 @@ func class_getInstanceMethod(_ cls: AnyClass?,
 //swaps m1 and m2, so that calling m1 executes the implementation of m2, and vice versa
 func method_exchangeImplementations(_ m1: Method,
                                   _ m2: Method)                        
-```
+{% endsplash %}
 
 Since we might want to do a whole lot of swizzling in our project, we'll wrap these methods in a generic ```Swizzler``` struct to have a bit more pleasant API to work with
 
-```swift
+{% splash  %}
 struct Swizzler<T: NSObject> {
     static func swizzle(_ originalSelector: Selector,
                         _ swizzledSelector: Selector) {
-        //The backticks let us use 'class' a variable name,
-        //despite it being a reserved keyword
         let `class`: AnyClass! = T.self
 
         guard
@@ -53,11 +53,12 @@ struct Swizzler<T: NSObject> {
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }
 }
-```
+{% endsplash %}
 
 We'll then extend UILabel with a method called ```setReallyLongText```, which will replace the ```label.text``` implementation. We'll also add a static func which performs the actual implementation swap via our Swizzler struct  
 
-```swift
+{% splash %}
+
 extension UILabel {
     @objc func setReallyLongText(_ text: String) {
         let replacementText = """
@@ -74,17 +75,17 @@ extension UILabel {
         Swizzler<UILabel>.swizzle(#selector(setter: text), #selector(setReallyLongText(_:)))
     }
 }
-```
+{% endsplash %}
 
 We can then call ```UILabel.swizzleSetReallyLongText()``` somewhere early in our app's lifecycle, and by doing so, all code in the app using the ```.text``` setter will instead call our ```setReallyLongText``` method with the given string passed as an argument.
 
 Note that our method seems to call itself with the *replacementText* we've defined, which is actually not as recursive as it might come across
-```swift
+{% splash %}
 @objc func setReallyLongText(_ text: String) {
     ...
     self.setReallyLongText(replacementText)
 }
-```
+{% endsplash %}
 
 Remember that we swapped names for UILabel's text setter, and our own method. So when ```label.text``` is invoked in our code, the implementation of ```setReallyLongText``` is executed, and when ```setReallyLongText``` is invoked in our code, the implementation of ```label.text``` is executed. So the above method hijacks the text setter method, replaces the string passed to it, and then passes this new string along to the original setter.
 
@@ -96,11 +97,11 @@ Although method swizzling might seem bordering on black magic, using it in your 
 
  In this case, I added a specific *Test* target to my project and added a *TEST* flag under *Build Settings -> Swift Compiler - Custom Flags -> Active Compilation Conditions*. I then put the following code in my AppDelegate's ```didFinishLaunching...``` method to make sure swizzling is left out whenever we're not testing
 
- ```swift
+{% splash %}
 #if TEST
 UILabel.swizzleSetReallyLongText()
 #endif
-```
+{% endsplash %}
 
 ### Other uses of swizzling
 
@@ -108,7 +109,7 @@ Hopefully this post can serve as an inspiration for coming up with other ways to
 
 This might look something like this
 
-```swift
+{% splash  %}
 extension UIViewController {
     @objc func logViewDidLoad() {
         Logger.log("viewDidLoad executed for \(type(of: self))")
@@ -119,6 +120,6 @@ extension UIViewController {
         Swizzler<UIViewController>.swizzle(#selector(viewDidLoad), #selector(logViewDidLoad))
     }
 }
-```
+{% endsplash  %}
 
 I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!
