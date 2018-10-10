@@ -3,8 +3,6 @@ layout: post
 title: Using enums to create flexible data models
 ---
 
-###### Syntax highlighting powered by [Splash](https://github.com/JohnSundell/Splash)
-
 In this post we're going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called *associated values* of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.     
 
 Enough chit-chat, let's write some code! Let's say we're making an app for a restaurant, with a menu made up of different categories of food. We might create a simple struct like this:

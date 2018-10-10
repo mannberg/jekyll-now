@@ -3,8 +3,6 @@ layout: post
 title: Failable initializers and self-validating models
 ---
 
-###### Syntax highlighting powered by [Splash](https://github.com/JohnSundell/Splash)
-
 Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you'll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let's use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we'll create a ```User``` object. We're not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We'll start by writing code which can be improved and then refactor this as we go along.
 
 First, well create a ```User``` struct:

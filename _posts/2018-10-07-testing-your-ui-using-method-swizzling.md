@@ -3,8 +3,6 @@ layout: post
 title: Testing your UI using method swizzling
 ---
 
-###### Syntax highlighting powered by [Splash](https://github.com/JohnSundell/Splash)
-
 Bugs come in many forms, and one of the classics is when our app's UI is messed up by rendering data that is
 either much larger or much smaller than we expected during development. For example, if you've ever done work on an app, chances are good you've come across a label which overlaps other elements when it's text gets too long, or clips the text in some unexpected, unwanted way. In this post, I'm going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called *method swizzling*.
 
