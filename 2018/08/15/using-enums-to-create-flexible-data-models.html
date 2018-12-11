@@ -4,20 +4,20 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
 <title>Using enums to create flexible data models | Mannberg on Swift</title>
-<meta name="generator" content="Jekyll v3.8.4" />
+<meta name="generator" content="Jekyll v3.8.5" />
 <meta property="og:title" content="Using enums to create flexible data models" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type." />
 <meta property="og:description" content="In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type." />
-<link rel="canonical" href="/2018/08/15/using-enums-to-create-flexible-data-models.html" />
-<meta property="og:url" content="/2018/08/15/using-enums-to-create-flexible-data-models.html" />
+<link rel="canonical" href="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html" />
+<meta property="og:url" content="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html" />
 <meta property="og:site_name" content="Mannberg on Swift" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2018-08-15T00:00:00+02:00" />
+<meta property="article:published_time" content="2018-08-15T22:32:38+02:00" />
 <script type="application/ld+json">
-{"url":"/2018/08/15/using-enums-to-create-flexible-data-models.html","headline":"Using enums to create flexible data models","dateModified":"2018-08-15T00:00:00+02:00","datePublished":"2018-08-15T00:00:00+02:00","description":"In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.","mainEntityOfPage":{"@type":"WebPage","@id":"/2018/08/15/using-enums-to-create-flexible-data-models.html"},"@type":"BlogPosting","@context":"http://schema.org"}</script>
+{"description":"In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.","@type":"BlogPosting","url":"http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html","headline":"Using enums to create flexible data models","dateModified":"2018-08-15T22:32:38+02:00","datePublished":"2018-08-15T22:32:38+02:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Mannberg on Swift" /></head>
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mannberg on Swift" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Mannberg on Swift</a><nav class="site-nav">
@@ -40,20 +40,16 @@
   <header class="post-header">
     <h1 class="post-title p-name" itemprop="name headline">Using enums to create flexible data models</h1>
     <p class="post-meta">
-        Syntax highlighting powered by
-        <a class="u-url" href="https://github.com/JohnSundell/Splash">Splash</a>
-    </p>
-    <p class="post-meta">
-      <time class="dt-published" datetime="2018-08-15T00:00:00+02:00" itemprop="datePublished">Aug 15, 2018
+      <time class="dt-published" datetime="2018-08-15T22:32:38+02:00" itemprop="datePublished">Aug 15, 2018
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called <em>associated values</em> of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.</p>
+    <p>In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.</p>
 
 <p>Enough chit-chat, let’s write some code! Let’s say we’re making an app for a restaurant, with a menu made up of different categories of food. We might create a simple struct like this:</p>
 
-<pre><code><span class="keyword">struct</span> MenuItem {
+<pre class="splash"><code><span class="keyword">struct</span> MenuItem {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> price: <span class="type">Int</span>
 }
@@ -61,7 +57,7 @@
 
 <p>This restaurant wants it’s food to be grouped by either of the categories meat, fish or dessert, so we’ll create an enum within our struct and add a case for each category.</p>
 
-<pre><code><span class="keyword">struct</span> MenuItem {
+<pre class="splash"><code><span class="keyword">struct</span> MenuItem {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> price: <span class="type">Int</span>
     <span class="keyword">var</span> category: <span class="type">Category</span>
@@ -76,13 +72,13 @@
 
 <p>We can now create different types of dishes like this:</p>
 
-<pre><code><span class="keyword">let</span> cheeseburger = <span class="type">MenuItem</span>(name: <span class="string">"Cheeseburger"</span>, price: <span class="number">4</span>, category: .<span class="dotAccess">meat</span>)
+<pre class="splash"><code><span class="keyword">let</span> cheeseburger = <span class="type">MenuItem</span>(name: <span class="string">"Cheeseburger"</span>, price: <span class="number">4</span>, category: .<span class="dotAccess">meat</span>)
 <span class="keyword">let</span> bananaSplit = <span class="type">MenuItem</span>(name: <span class="string">"Banana</span> <span class="string">Split"</span>, price: <span class="number">3</span>, category: .<span class="dotAccess">dessert</span>)
 </code></pre>
 
 <p>After a bit of coding, we realise we need to add beverages to the menu. Since drinks also have names and prices it seems reasonable to group these with the other menu items:</p>
 
-<pre><code><span class="keyword">struct</span> MenuItem {
+<pre class="splash"><code><span class="keyword">struct</span> MenuItem {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> price: <span class="type">Int</span>
     <span class="keyword">var</span> category: <span class="type">Category</span>
@@ -98,7 +94,7 @@
 
 <p>In this particular restaurant, all drinks come in sizes big or small, so we’ll want a way to store that data as well. One way to do this would be to add a Size enum to our MenuItem struct, and then add a size property to hold this value. Since all edible menu items come in one size only it wouldn’t make sense for them to have a size value, so that property would need to be optional:</p>
 
-<pre><code><span class="keyword">struct</span> MenuItem {
+<pre class="splash"><code><span class="keyword">struct</span> MenuItem {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> price: <span class="type">Int</span>
     <span class="keyword">var</span> category: <span class="type">Category</span>
@@ -120,7 +116,7 @@
 
 <p>We could now create instances of MenuItem like this:</p>
 
-<pre><code><span class="keyword">let</span> bigMojito = <span class="type">MenuItem</span>(name: <span class="string">"Mojito"</span>, price: <span class="number">3</span>, category: .<span class="dotAccess">beverage</span>, size: .<span class="dotAccess">big</span>)
+<pre class="splash"><code><span class="keyword">let</span> bigMojito = <span class="type">MenuItem</span>(name: <span class="string">"Mojito"</span>, price: <span class="number">3</span>, category: .<span class="dotAccess">beverage</span>, size: .<span class="dotAccess">big</span>)
 <span class="keyword">let</span> bolognese = <span class="type">MenuItem</span>(name: <span class="string">"Spaghetti</span> <span class="string">Bolognese"</span>, price: <span class="number">7</span>, category: .<span class="dotAccess">meat</span>, size: <span class="keyword">nil</span>)
 </code></pre>
 
@@ -130,7 +126,7 @@
 
 <p>This is were things could be solved quite nicely by using an enum. As mentioned earlier, enum cases can store associated values of all kinds which make them just as fit for structuring data. Let’s rethink our menu a bit and replace the MenuItem struct with an enum. We’ll start by just adding the non-liquid categories to our enum:</p>
 
-<pre><code><span class="keyword">enum</span> MenuItem {
+<pre class="splash"><code><span class="keyword">enum</span> MenuItem {
     <span class="keyword">case</span> meat(name: <span class="type">String</span>, price: <span class="type">Int</span>)
     <span class="keyword">case</span> fish(name: <span class="type">String</span>, price: <span class="type">Int</span>)
     <span class="keyword">case</span> dessert(name: <span class="type">String</span>, price: <span class="type">Int</span>)
@@ -139,12 +135,12 @@
 
 <p>The parameters (name, price) are the associated values, and these are passed like any function arguments when creating an instance of the enum case. For example, we would now create our cheeseburger object like this:</p>
 
-<pre><code><span class="keyword">let</span> cheeseburger = <span class="type">MenuItem</span>.<span class="call">meat</span>(name: <span class="string">"Cheeseburger"</span>, price: <span class="number">4</span>)
+<pre class="splash"><code><span class="keyword">let</span> cheeseburger = <span class="type">MenuItem</span>.<span class="call">meat</span>(name: <span class="string">"Cheeseburger"</span>, price: <span class="number">4</span>)
 </code></pre>
 
 <p>The names, types and amount of associated values for each case are completely detached from those of the other cases. This will be clear as we’ll now add our beverage case to the MenuItem enum. Since we still want our drinks to have different sizes, we’ll also add the Size enum as a member of MenuItem.</p>
 
-<pre><code><span class="keyword">enum</span> MenuItem {
+<pre class="splash"><code><span class="keyword">enum</span> MenuItem {
     <span class="keyword">case</span> meat(name: <span class="type">String</span>, price: <span class="type">Int</span>)
     <span class="keyword">case</span> fish(name: <span class="type">String</span>, price: <span class="type">Int</span>)
     <span class="keyword">case</span> dessert(name: <span class="type">String</span>, price: <span class="type">Int</span>)
@@ -159,13 +155,13 @@
 
 <p>Notice how we now have drink case with a unique size parameter. Instead of having to bother with passing nil values for other items, we have a nice set of categories which are all of the same type (MenuItem), but can be easily extendable. We could now create items like this:</p>
 
-<pre><code><span class="keyword">let</span> seaBass = <span class="type">MenuItem</span>.<span class="call">fish</span>(name: <span class="string">"Grilled</span> <span class="string">Sea</span> <span class="string">Bass"</span>, price: <span class="number">7</span>)
+<pre class="splash"><code><span class="keyword">let</span> seaBass = <span class="type">MenuItem</span>.<span class="call">fish</span>(name: <span class="string">"Grilled</span> <span class="string">Sea</span> <span class="string">Bass"</span>, price: <span class="number">7</span>)
 <span class="keyword">let</span> frozenMargarita = <span class="type">MenuItem</span>.<span class="call">drink</span>(name: <span class="string">"Frozen</span> <span class="string">Margarita"</span>, price: <span class="number">5</span>, size: .<span class="dotAccess">big</span>)
 </code></pre>
 
-<p>What’s really good about this technique is it’s flexibility - we can easily add or remove properties from any case without affecting the others. For example, sometime down the road we might decide that our app users should be able to choose how their meat will be prepared (it’s <em>doneness</em> - rare, medium etc.). We might also decide that all desserts should be free of charge, and thus won’t need a price property. This could easily be changed in our enum without bothering with optionals:</p>
+<p>What’s really good about this technique is it’s flexibility - we can easily add or remove properties from any case without affecting the others. For example, sometime down the road we might decide that our app users should be able to choose how their meat will be prepared (it’s doneness - rare, medium etc.). We might also decide that all desserts should be free of charge, and thus won’t need a price property. This could easily be changed in our enum without bothering with optionals:</p>
 
-<pre><code><span class="keyword">enum</span> MenuItem {
+<pre class="splash"><code><span class="keyword">enum</span> MenuItem {
     <span class="keyword">case</span> meat(name: <span class="type">String</span>, price: <span class="type">Int</span>, doneness: <span class="type">Doneness</span>)
     <span class="keyword">case</span> fish(name: <span class="type">String</span>, price: <span class="type">Int</span>)
     <span class="keyword">case</span> dessert(name: <span class="type">String</span>)
@@ -179,14 +175,15 @@
 
     ...
 }
+</code></pre>
 
-<span class="keyword">let</span> steak = <span class="type">MenuItem</span>.<span class="call">meat</span>(name: <span class="string">"Steak"</span>, price: <span class="number">8</span>, doneness: .<span class="dotAccess">rare</span>)
+<pre class="splash"><code><span class="keyword">let</span> steak = <span class="type">MenuItem</span>.<span class="call">meat</span>(name: <span class="string">"Steak"</span>, price: <span class="number">8</span>, doneness: .<span class="dotAccess">rare</span>)
 <span class="keyword">let</span> freeDessert = <span class="type">MenuItem</span>.<span class="call">dessert</span>(name: <span class="string">"Creme</span> <span class="string">Brulee"</span>)
 </code></pre>
 
 <p>Just as struct and classes, enums in Swift can also contain logic in the form of methods and computed properties. Why not serve drinks at half the price on Sundays:</p>
 
-<pre><code><span class="keyword">extension</span> <span class="type">Dish</span> {
+<pre class="splash"><code><span class="keyword">extension</span> <span class="type">Dish</span> {
     <span class="keyword">var</span> price: <span class="type">Int</span> {
         <span class="keyword">switch</span> <span class="keyword">self</span> {
         <span class="keyword">case</span> <span class="keyword">let</span> .<span class="dotAccess">beverage</span>(<span class="keyword">_</span>, price, <span class="keyword">_</span>):
@@ -219,7 +216,7 @@
           <li class="p-name">Mannberg on Swift</li></ul>
       </div>
 
-      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/andersmannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">andersmannberg</span></a></li></ul>
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">mannberg</span></a></li></ul>
 </div>
 
       <div class="footer-col footer-col-3">

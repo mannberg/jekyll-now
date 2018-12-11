@@ -4,20 +4,20 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
 <title>Testing your UI using method swizzling | Mannberg on Swift</title>
-<meta name="generator" content="Jekyll v3.8.4" />
+<meta name="generator" content="Jekyll v3.8.5" />
 <meta property="og:title" content="Testing your UI using method swizzling" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling." />
 <meta property="og:description" content="Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling." />
-<link rel="canonical" href="/2018/10/07/testing-your-ui-using-method-swizzling.html" />
-<meta property="og:url" content="/2018/10/07/testing-your-ui-using-method-swizzling.html" />
+<link rel="canonical" href="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html" />
+<meta property="og:url" content="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html" />
 <meta property="og:site_name" content="Mannberg on Swift" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2018-10-07T00:00:00+02:00" />
+<meta property="article:published_time" content="2018-10-07T22:32:38+02:00" />
 <script type="application/ld+json">
-{"url":"/2018/10/07/testing-your-ui-using-method-swizzling.html","headline":"Testing your UI using method swizzling","dateModified":"2018-10-07T00:00:00+02:00","datePublished":"2018-10-07T00:00:00+02:00","description":"Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.","mainEntityOfPage":{"@type":"WebPage","@id":"/2018/10/07/testing-your-ui-using-method-swizzling.html"},"@type":"BlogPosting","@context":"http://schema.org"}</script>
+{"description":"Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.","@type":"BlogPosting","url":"http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html","headline":"Testing your UI using method swizzling","dateModified":"2018-10-07T22:32:38+02:00","datePublished":"2018-10-07T22:32:38+02:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Mannberg on Swift" /></head>
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mannberg on Swift" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Mannberg on Swift</a><nav class="site-nav">
@@ -40,21 +40,16 @@
   <header class="post-header">
     <h1 class="post-title p-name" itemprop="name headline">Testing your UI using method swizzling</h1>
     <p class="post-meta">
-        Syntax highlighting powered by
-        <a class="u-url" href="https://github.com/JohnSundell/Splash">Splash</a>
-    </p>
-    <p class="post-meta">
-      <time class="dt-published" datetime="2018-10-07T00:00:00+02:00" itemprop="datePublished">Oct 7, 2018
+      <time class="dt-published" datetime="2018-10-07T22:32:38+02:00" itemprop="datePublished">Oct 7, 2018
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is
-either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called <em>method swizzling</em>.</p>
+    <p>Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.</p>
 
 <h3 id="method-swizzling">Method swizzling</h3>
 
-<p>In short, swizzling is a technique available through the <em>Objective C runtime</em> library, which allows you to make a swap so that the <em>selector</em>, or name, of method <em>m1</em> points to the implementation of another method <em>m2</em>, and vice versa. I won’t go into detail about swizzling or the Objective C runtime in general in this article, but I really recommend reading <a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008048">Apple’s documentation</a> on the matter, to get a feeling for the extremely dynamic nature of what goes on under the hood when you develop using iOS and macOS frameworks. More of that stuff in a future post!</p>
+<p>In short, swizzling is a technique available through the Objective C runtime library, which allows you to make a swap so that the selector, or name, of method m1 points to the implementation of another method m2, and vice versa. I won’t go into detail about swizzling or the Objective C runtime in general in this article, but I really recommend reading Apple’s documentation on the matter, to get a feeling for the extremely dynamic nature of what goes on under the hood when you develop using iOS and macOS frameworks. More of that stuff in a future post!</p>
 
 <p>To give an example of how swizzling could be used: With a few lines of code we could replace the <code class="highlighter-rouge">viewDidLoad()</code> implementation of every single instance of UIViewController, so that every time it is called on a UIViewController or any of it’s subclasses, our customized version that we might wanna call <code class="highlighter-rouge">swizzledViewDidLoad()</code> would be executed instead. Note that this is different from overriding a method in a subclass, since we by swizzling can replace the implementations of the actual base classes in Apple’s closed source frameworks such as UIKit and Foundation. Cool stuff for sure!</p>
 
@@ -62,14 +57,14 @@ either much larger or much smaller than we expected during development. For exam
 
 <p>To help us debug our UI in order to detect nasty UILabel bugs, we are going to replace the method that is called when setting the text property of a UILabel</p>
 
-<pre><code>label.<span class="property">text</span> = <span class="string">"This</span> <span class="string">text</span> <span class="string">will</span> <span class="string">be</span> <span class="string">swizzled</span> <span class="string">away!"</span>
+<pre class="splash"><code>label.<span class="property">text</span> = <span class="string">"This</span> <span class="string">text</span> <span class="string">will</span> <span class="string">be</span> <span class="string">swizzled</span> <span class="string">away!"</span>
 </code></pre>
 
 <p>The reason for doing this is that we want to define a really long text with great potential to mess up the UI, and we want to be able to make every single label in the app show this text simultaneously, whether a base class or a subclass instance. In this way we can easily see how long strings are handled as our UI evolves. What’s nice about using swizzling in this case, is that we can accomplish what we want without having to make any changes to the call sites where our labels are used. This of course saves us time and prevents us from polluting our code with debug-specific stuff.</p>
 
 <p>Basically, we’re just going to use 2 methods from the Objective C Runtime library:</p>
 
-<pre><code><span class="comment">//Gets</span> <span class="comment">a</span> <span class="comment">reference</span> <span class="comment">to</span> <span class="comment">the</span> <span class="comment">method</span> <span class="comment">in</span> <span class="comment">class</span> <span class="comment">cls</span> <span class="comment">with</span> <span class="comment">the</span> <span class="comment">name</span> <span class="comment">name</span>
+<pre class="splash"><code><span class="comment">//Gets</span> <span class="comment">a</span> <span class="comment">reference</span> <span class="comment">to</span> <span class="comment">the</span> <span class="comment">method</span> <span class="comment">in</span> <span class="comment">class</span> <span class="comment">cls</span> <span class="comment">with</span> <span class="comment">the</span> <span class="comment">name</span> <span class="comment">name</span>
 <span class="keyword">func</span> class_getInstanceMethod(<span class="keyword">_</span> cls: <span class="type">AnyClass</span>?,
                            <span class="keyword">_</span> name: <span class="type">Selector</span>) -&gt; <span class="type">Method</span>?
 
@@ -80,7 +75,7 @@ either much larger or much smaller than we expected during development. For exam
 
 <p>Since we might want to do a whole lot of swizzling in our project, we’ll wrap these methods in a generic <code class="highlighter-rouge">Swizzler</code> struct to have a bit more pleasant API to work with</p>
 
-<pre><code><span class="keyword">struct</span> Swizzler&lt;T: <span class="type">NSObject</span>&gt; {
+<pre class="splash"><code><span class="keyword">struct</span> Swizzler&lt;T: <span class="type">NSObject</span>&gt; {
     <span class="keyword">static</span> <span class="keyword">func</span> swizzle(<span class="keyword">_</span> originalSelector: <span class="type">Selector</span>,
                         <span class="keyword">_</span> swizzledSelector: <span class="type">Selector</span>) {
         <span class="keyword">let</span> `<span class="keyword">class</span>`: <span class="type">AnyClass</span>! = <span class="type">T</span>.<span class="keyword">self</span>
@@ -98,7 +93,7 @@ either much larger or much smaller than we expected during development. For exam
 
 <p>We’ll then extend UILabel with a method called <code class="highlighter-rouge">setReallyLongText</code>, which will replace the <code class="highlighter-rouge">label.text</code> implementation. We’ll also add a static func which performs the actual implementation swap via our Swizzler struct</p>
 
-<pre><code><span class="keyword">extension</span> <span class="type">UILabel</span> {
+<pre class="splash"><code><span class="keyword">extension</span> <span class="type">UILabel</span> {
     <span class="keyword">@objc</span> <span class="keyword">func</span> setReallyLongText(<span class="keyword">_</span> text: <span class="type">String</span>) {
         <span class="keyword">let</span> replacementText = <span class="string">"""</span>
         <span class="string">Bacon</span> <span class="string">ipsum</span> <span class="string">dolor</span> <span class="string">amet</span> <span class="string">turducken</span> <span class="string">ground</span> <span class="string">round</span> <span class="string">cow</span>
@@ -118,8 +113,9 @@ either much larger or much smaller than we expected during development. For exam
 
 <p>We can then call <code class="highlighter-rouge">UILabel.swizzleSetReallyLongText()</code> somewhere early in our app’s lifecycle, and by doing so, all code in the app using the <code class="highlighter-rouge">.text</code> setter will instead call our <code class="highlighter-rouge">setReallyLongText</code> method with the given string passed as an argument.</p>
 
-<p>Note that our method seems to call itself with the <em>replacementText</em> we’ve defined, which is actually not as recursive as it might come across</p>
-<pre><code><span class="keyword">@objc</span> <span class="keyword">func</span> setReallyLongText(<span class="keyword">_</span> text: <span class="type">String</span>) {
+<p>Note that our method seems to call itself with the replacementText we’ve defined, which is actually not as recursive as it might come across</p>
+
+<pre class="splash"><code><span class="keyword">@objc</span> <span class="keyword">func</span> setReallyLongText(<span class="keyword">_</span> text: <span class="type">String</span>) {
     ...
     <span class="keyword">self</span>.<span class="call">setReallyLongText</span>(replacementText)
 }
@@ -129,13 +125,13 @@ either much larger or much smaller than we expected during development. For exam
 
 <h3 id="with-great-power-comes-great-responsibility">With great power comes great responsibility</h3>
 
-<p>Although method swizzling might seem bordering on black magic, using it in your code should not be a problem as far as getting your app to App Store is concerned. However, it’s still something that could seriously mess up your code if you don’t tread with caution. Since we have no idea what the actual implementation of methods in UIKit or Foundation look like, there’s a risk of swizzling away some very important functionality which will cause trouble down the road. It’s likely a good idea to call the original implementation in your hijacked method unless you have a very good reason not too. And unless you <em>really</em> know what you’re doing, it’s probably a good idea <em>not</em> use this stuff in production.</p>
+<p>Although method swizzling might seem bordering on black magic, using it in your code should not be a problem as far as getting your app to App Store is concerned. However, it’s still something that could seriously mess up your code if you don’t tread with caution. Since we have no idea what the actual implementation of methods in UIKit or Foundation look like, there’s a risk of swizzling away some very important functionality which will cause trouble down the road. It’s likely a good idea to call the original implementation in your hijacked method unless you have a very good reason not too. And unless you really know what you’re doing, it’s probably a good idea not use this stuff in production.</p>
 
 <p>When having code that is debug/test specific, it’s good practice to create a separate target in Xcode. By doing this you can add custom flags to your target which will activate test-specific functionality when building that target only. In this way you don’t have to manually activate/deactivate debug features in your code whenever you want to test things, which is both tedious and risky, should you ever forget to change something back before shipping your app.</p>
 
-<p>In this case, I added a specific <em>Test</em> target to my project and added a <em>TEST</em> flag under <em>Build Settings -&gt; Swift Compiler - Custom Flags -&gt; Active Compilation Conditions</em>. I then put the following code in my AppDelegate’s <code class="highlighter-rouge">didFinishLaunching...</code> method to make sure swizzling is left out whenever we’re not testing</p>
+<p>In this case, I added a specific Test target to my project and added a TEST flag under Build Settings -&gt; Swift Compiler - Custom Flags -&gt; Active Compilation Conditions. I then put the following code in my AppDelegate’s <code class="highlighter-rouge">didFinishLaunching...</code> method to make sure swizzling is left out whenever we’re not testing</p>
 
-<pre><code><span class="preprocessing">#if</span> <span class="preprocessing">TEST</span>
+<pre class="splash"><code><span class="preprocessing">#if</span> <span class="preprocessing">TEST</span>
 <span class="type">UILabel</span>.<span class="call">swizzleSetReallyLongText</span>()
 <span class="preprocessing">#endif</span>
 </code></pre>
@@ -146,7 +142,7 @@ either much larger or much smaller than we expected during development. For exam
 
 <p>This might look something like this</p>
 
-<pre><code><span class="keyword">extension</span> <span class="type">UIViewController</span> {
+<pre class="splash"><code><span class="keyword">extension</span> <span class="type">UIViewController</span> {
     <span class="keyword">@objc</span> <span class="keyword">func</span> logViewDidLoad() {
         <span class="type">Logger</span>.<span class="call">log</span>(<span class="string">"viewDidLoad</span> <span class="string">executed</span> <span class="string">for</span> \(<span class="call">type</span>(of: <span class="keyword">self</span>))<span class="string">"</span>)
         <span class="call">logViewDidLoad</span>()
@@ -177,7 +173,7 @@ either much larger or much smaller than we expected during development. For exam
           <li class="p-name">Mannberg on Swift</li></ul>
       </div>
 
-      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/andersmannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">andersmannberg</span></a></li></ul>
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">mannberg</span></a></li></ul>
 </div>
 
       <div class="footer-col footer-col-3">

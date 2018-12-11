@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2018-10-10T19:21:14+02:00</updated><id>/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Testing your UI using method swizzling</title><link href="/2018/10/07/testing-your-ui-using-method-swizzling.html" rel="alternate" type="text/html" title="Testing your UI using method swizzling" /><published>2018-10-07T00:00:00+02:00</published><updated>2018-10-07T00:00:00+02:00</updated><id>/2018/10/07/testing-your-ui-using-method-swizzling</id><content type="html" xml:base="/2018/10/07/testing-your-ui-using-method-swizzling.html">&lt;p&gt;Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is
-either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called &lt;em&gt;method swizzling&lt;/em&gt;.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-12-11T23:01:08+01:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Testing your UI using method swizzling</title><link href="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html" rel="alternate" type="text/html" title="Testing your UI using method swizzling" /><published>2018-10-07T22:32:38+02:00</published><updated>2018-10-07T22:32:38+02:00</updated><id>http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling</id><content type="html" xml:base="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html">&lt;p&gt;Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.&lt;/p&gt;
 
 &lt;h3 id=&quot;method-swizzling&quot;&gt;Method swizzling&lt;/h3&gt;
 
-&lt;p&gt;In short, swizzling is a technique available through the &lt;em&gt;Objective C runtime&lt;/em&gt; library, which allows you to make a swap so that the &lt;em&gt;selector&lt;/em&gt;, or name, of method &lt;em&gt;m1&lt;/em&gt; points to the implementation of another method &lt;em&gt;m2&lt;/em&gt;, and vice versa. I won’t go into detail about swizzling or the Objective C runtime in general in this article, but I really recommend reading &lt;a href=&quot;https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008048&quot;&gt;Apple’s documentation&lt;/a&gt; on the matter, to get a feeling for the extremely dynamic nature of what goes on under the hood when you develop using iOS and macOS frameworks. More of that stuff in a future post!&lt;/p&gt;
+&lt;p&gt;In short, swizzling is a technique available through the Objective C runtime library, which allows you to make a swap so that the selector, or name, of method m1 points to the implementation of another method m2, and vice versa. I won’t go into detail about swizzling or the Objective C runtime in general in this article, but I really recommend reading Apple’s documentation on the matter, to get a feeling for the extremely dynamic nature of what goes on under the hood when you develop using iOS and macOS frameworks. More of that stuff in a future post!&lt;/p&gt;
 
 &lt;p&gt;To give an example of how swizzling could be used: With a few lines of code we could replace the &lt;code class=&quot;highlighter-rouge&quot;&gt;viewDidLoad()&lt;/code&gt; implementation of every single instance of UIViewController, so that every time it is called on a UIViewController or any of it’s subclasses, our customized version that we might wanna call &lt;code class=&quot;highlighter-rouge&quot;&gt;swizzledViewDidLoad()&lt;/code&gt; would be executed instead. Note that this is different from overriding a method in a subclass, since we by swizzling can replace the implementations of the actual base classes in Apple’s closed source frameworks such as UIKit and Foundation. Cool stuff for sure!&lt;/p&gt;
 
@@ -11,14 +10,14 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;To help us debug our UI in order to detect nasty UILabel bugs, we are going to replace the method that is called when setting the text property of a UILabel&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;label.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; = &lt;span class=&quot;string&quot;&gt;&quot;This&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;text&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;will&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;swizzled&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;away!&quot;&lt;/span&gt;
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;label.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; = &lt;span class=&quot;string&quot;&gt;&quot;This&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;text&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;will&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;swizzled&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;away!&quot;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;The reason for doing this is that we want to define a really long text with great potential to mess up the UI, and we want to be able to make every single label in the app show this text simultaneously, whether a base class or a subclass instance. In this way we can easily see how long strings are handled as our UI evolves. What’s nice about using swizzling in this case, is that we can accomplish what we want without having to make any changes to the call sites where our labels are used. This of course saves us time and prevents us from polluting our code with debug-specific stuff.&lt;/p&gt;
 
 &lt;p&gt;Basically, we’re just going to use 2 methods from the Objective C Runtime library:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;comment&quot;&gt;//Gets&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;reference&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;method&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;cls&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;with&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;name&lt;/span&gt;
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;comment&quot;&gt;//Gets&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;reference&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;method&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;cls&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;with&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;name&lt;/span&gt;
 &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; class_getInstanceMethod(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; cls: &lt;span class=&quot;type&quot;&gt;AnyClass&lt;/span&gt;?,
                            &lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;Selector&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Method&lt;/span&gt;?
 
@@ -29,7 +28,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;Since we might want to do a whole lot of swizzling in our project, we’ll wrap these methods in a generic &lt;code class=&quot;highlighter-rouge&quot;&gt;Swizzler&lt;/code&gt; struct to have a bit more pleasant API to work with&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; Swizzler&amp;lt;T: &lt;span class=&quot;type&quot;&gt;NSObject&lt;/span&gt;&amp;gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; Swizzler&amp;lt;T: &lt;span class=&quot;type&quot;&gt;NSObject&lt;/span&gt;&amp;gt; {
     &lt;span class=&quot;keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; swizzle(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; originalSelector: &lt;span class=&quot;type&quot;&gt;Selector&lt;/span&gt;,
                         &lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; swizzledSelector: &lt;span class=&quot;type&quot;&gt;Selector&lt;/span&gt;) {
         &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; `&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt;`: &lt;span class=&quot;type&quot;&gt;AnyClass&lt;/span&gt;! = &lt;span class=&quot;type&quot;&gt;T&lt;/span&gt;.&lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;
@@ -47,7 +46,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We’ll then extend UILabel with a method called &lt;code class=&quot;highlighter-rouge&quot;&gt;setReallyLongText&lt;/code&gt;, which will replace the &lt;code class=&quot;highlighter-rouge&quot;&gt;label.text&lt;/code&gt; implementation. We’ll also add a static func which performs the actual implementation swap via our Swizzler struct&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;UILabel&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;UILabel&lt;/span&gt; {
     &lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; setReallyLongText(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) {
         &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; replacementText = &lt;span class=&quot;string&quot;&gt;&quot;&quot;&quot;&lt;/span&gt;
         &lt;span class=&quot;string&quot;&gt;Bacon&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;ipsum&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;dolor&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;amet&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;turducken&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;ground&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;round&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;cow&lt;/span&gt;
@@ -67,8 +66,9 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We can then call &lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel.swizzleSetReallyLongText()&lt;/code&gt; somewhere early in our app’s lifecycle, and by doing so, all code in the app using the &lt;code class=&quot;highlighter-rouge&quot;&gt;.text&lt;/code&gt; setter will instead call our &lt;code class=&quot;highlighter-rouge&quot;&gt;setReallyLongText&lt;/code&gt; method with the given string passed as an argument.&lt;/p&gt;
 
-&lt;p&gt;Note that our method seems to call itself with the &lt;em&gt;replacementText&lt;/em&gt; we’ve defined, which is actually not as recursive as it might come across&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; setReallyLongText(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) {
+&lt;p&gt;Note that our method seems to call itself with the replacementText we’ve defined, which is actually not as recursive as it might come across&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; setReallyLongText(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) {
     ...
     &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;setReallyLongText&lt;/span&gt;(replacementText)
 }
@@ -78,13 +78,13 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;h3 id=&quot;with-great-power-comes-great-responsibility&quot;&gt;With great power comes great responsibility&lt;/h3&gt;
 
-&lt;p&gt;Although method swizzling might seem bordering on black magic, using it in your code should not be a problem as far as getting your app to App Store is concerned. However, it’s still something that could seriously mess up your code if you don’t tread with caution. Since we have no idea what the actual implementation of methods in UIKit or Foundation look like, there’s a risk of swizzling away some very important functionality which will cause trouble down the road. It’s likely a good idea to call the original implementation in your hijacked method unless you have a very good reason not too. And unless you &lt;em&gt;really&lt;/em&gt; know what you’re doing, it’s probably a good idea &lt;em&gt;not&lt;/em&gt; use this stuff in production.&lt;/p&gt;
+&lt;p&gt;Although method swizzling might seem bordering on black magic, using it in your code should not be a problem as far as getting your app to App Store is concerned. However, it’s still something that could seriously mess up your code if you don’t tread with caution. Since we have no idea what the actual implementation of methods in UIKit or Foundation look like, there’s a risk of swizzling away some very important functionality which will cause trouble down the road. It’s likely a good idea to call the original implementation in your hijacked method unless you have a very good reason not too. And unless you really know what you’re doing, it’s probably a good idea not use this stuff in production.&lt;/p&gt;
 
 &lt;p&gt;When having code that is debug/test specific, it’s good practice to create a separate target in Xcode. By doing this you can add custom flags to your target which will activate test-specific functionality when building that target only. In this way you don’t have to manually activate/deactivate debug features in your code whenever you want to test things, which is both tedious and risky, should you ever forget to change something back before shipping your app.&lt;/p&gt;
 
-&lt;p&gt;In this case, I added a specific &lt;em&gt;Test&lt;/em&gt; target to my project and added a &lt;em&gt;TEST&lt;/em&gt; flag under &lt;em&gt;Build Settings -&amp;gt; Swift Compiler - Custom Flags -&amp;gt; Active Compilation Conditions&lt;/em&gt;. I then put the following code in my AppDelegate’s &lt;code class=&quot;highlighter-rouge&quot;&gt;didFinishLaunching...&lt;/code&gt; method to make sure swizzling is left out whenever we’re not testing&lt;/p&gt;
+&lt;p&gt;In this case, I added a specific Test target to my project and added a TEST flag under Build Settings -&amp;gt; Swift Compiler - Custom Flags -&amp;gt; Active Compilation Conditions. I then put the following code in my AppDelegate’s &lt;code class=&quot;highlighter-rouge&quot;&gt;didFinishLaunching...&lt;/code&gt; method to make sure swizzling is left out whenever we’re not testing&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;preprocessing&quot;&gt;#if&lt;/span&gt; &lt;span class=&quot;preprocessing&quot;&gt;TEST&lt;/span&gt;
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;preprocessing&quot;&gt;#if&lt;/span&gt; &lt;span class=&quot;preprocessing&quot;&gt;TEST&lt;/span&gt;
 &lt;span class=&quot;type&quot;&gt;UILabel&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;swizzleSetReallyLongText&lt;/span&gt;()
 &lt;span class=&quot;preprocessing&quot;&gt;#endif&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
@@ -95,7 +95,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;This might look something like this&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;UIViewController&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;UIViewController&lt;/span&gt; {
     &lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; logViewDidLoad() {
         &lt;span class=&quot;type&quot;&gt;Logger&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;log&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;viewDidLoad&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;executed&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;for&lt;/span&gt; \(&lt;span class=&quot;call&quot;&gt;type&lt;/span&gt;(of: &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;))&lt;span class=&quot;string&quot;&gt;&quot;&lt;/span&gt;)
         &lt;span class=&quot;call&quot;&gt;logViewDidLoad&lt;/span&gt;()
@@ -107,11 +107,11 @@ either much larger or much smaller than we expected during development. For exam
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.</summary></entry><entry><title type="html">Failable initializers and self-validating models</title><link href="/2018/08/20/failable-initializers-and-self-validating-models.html" rel="alternate" type="text/html" title="Failable initializers and self-validating models" /><published>2018-08-20T00:00:00+02:00</published><updated>2018-08-20T00:00:00+02:00</updated><id>/2018/08/20/failable-initializers-and-self-validating-models</id><content type="html" xml:base="/2018/08/20/failable-initializers-and-self-validating-models.html">&lt;p&gt;Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.&lt;/p&gt;
+&lt;p&gt;I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.</summary></entry><entry><title type="html">Failable initializers and self-validating models</title><link href="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html" rel="alternate" type="text/html" title="Failable initializers and self-validating models" /><published>2018-08-20T22:32:38+02:00</published><updated>2018-08-20T22:32:38+02:00</updated><id>http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models</id><content type="html" xml:base="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html">&lt;p&gt;Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.&lt;/p&gt;
 
 &lt;p&gt;First, well create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; struct:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; emailAddress: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
 }
@@ -121,7 +121,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;Before we pass user data on to our backend, we’ll want some local validation logic for the email address. One possible place to put this code could be in some sort of dedicated validator struct:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; EmailValidator {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; EmailValidator {
     &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; isValidEmailAddress(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; string: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt; {
         ...
         &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; valueOfValidation
@@ -131,7 +131,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We could now use our validator like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; addressToValidate = &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; addressToValidate = &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;
 &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;EmailValidator&lt;/span&gt;().&lt;span class=&quot;call&quot;&gt;isValidEmailAddress&lt;/span&gt;(addressToValidate) {
     &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: addressToValidate)
 }
@@ -139,12 +139,12 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;Besides a Validator being a inelegant name for a class or struct, another problem with &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailValidator&lt;/code&gt; is that it’s usage is optional. By mistake we could bypass email validation and still create a user object, leaving room for potential errors:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;A possible (but not very elegant) way to solve this could be injecting the validator into our &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; struct. We could also add what is called a &lt;em&gt;failable initalizer&lt;/em&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt;, which is an init method that returns either an object or a nil value, depending on whatever conditions we set. In this way, we would always have to pass a valid email address to get a instance rather than getting nil:&lt;/p&gt;
+&lt;p&gt;A possible (but not very elegant) way to solve this could be injecting the validator into our &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; struct. We could also add what is called a failable initalizer to &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt;, which is an init method that returns either an object or a nil value, depending on whatever conditions we set. In this way, we would always have to pass a valid email address to get a instance rather than getting nil:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; emailAddress: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
 
@@ -162,7 +162,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;This would allow us to create users like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;, validator: &lt;span class=&quot;type&quot;&gt;EmailValidator&lt;/span&gt;())
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;, validator: &lt;span class=&quot;type&quot;&gt;EmailValidator&lt;/span&gt;())
 {
     &lt;span class=&quot;comment&quot;&gt;//We&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;have&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;user!&lt;/span&gt;
 }
@@ -172,7 +172,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;If we ever want to change our business logic to allow a user to register without an email address, we would now have to make not only one but two parameters optional, since it would not make sense to have a non-optional validator for an optional value:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; emailAddress: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;?
 
@@ -184,12 +184,12 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;This would give us quite a weird interface where we could pass an email address without a validator:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;, validator: &lt;span class=&quot;keyword&quot;&gt;nil&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;, validator: &lt;span class=&quot;keyword&quot;&gt;nil&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;A cleaner way to do this is to put the validation where it belongs, which is with the email address rather with the user. We’ll create an &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailAddress&lt;/code&gt; struct containing both the actual &lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt; value for the address, and the validation logic. If we also add a failable initializer just as we did with &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt;, we make sure we only get an object instance to work with if our precondtions are met.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; EmailAddress {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; EmailAddress {
     &lt;span class=&quot;comment&quot;&gt;//A&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;setter&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;allows&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;us&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;retrieve,&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;but&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;change,&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;outside&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;our&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;struct&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; (set)&lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; value: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
 
@@ -210,7 +210,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; will then hold a reference to &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailAddress&lt;/code&gt;:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; User {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; emailAddress: &lt;span class=&quot;type&quot;&gt;EmailAddress&lt;/span&gt;
 
@@ -223,7 +223,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We now have a lot cleaner api where the user does not have to bother with email validation, and we as coders don’t have to bother with non-natural sounding structs named stuff like Validator.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;guard&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; validAddress = &lt;span class=&quot;type&quot;&gt;EmailAddress&lt;/span&gt;(addressToValidate: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;) &lt;span class=&quot;keyword&quot;&gt;else&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;guard&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; validAddress = &lt;span class=&quot;type&quot;&gt;EmailAddress&lt;/span&gt;(addressToValidate: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;) &lt;span class=&quot;keyword&quot;&gt;else&lt;/span&gt; {
     &lt;span class=&quot;call&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;Not&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;valid&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;email&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;address!&quot;&lt;/span&gt;)
 }
 
@@ -234,7 +234,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;If we’re later adding more data types to &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; that also needs validation, we could follow the same structure. If we’re adding several types we might want to create a protocol:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;protocol&lt;/span&gt; Validatable {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;protocol&lt;/span&gt; Validatable {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; value: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt; { &lt;span class=&quot;keyword&quot;&gt;get&lt;/span&gt; }
     &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; isValid(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; string: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt;
 }
@@ -261,7 +261,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We’ll add an instance of &lt;code class=&quot;highlighter-rouge&quot;&gt;CreditCard&lt;/code&gt; to &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; and now we can create user objects like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;guard&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; validAddress = &lt;span class=&quot;type&quot;&gt;EmailAddress&lt;/span&gt;(addressToValidate: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;) &lt;span class=&quot;keyword&quot;&gt;else&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;guard&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; validAddress = &lt;span class=&quot;type&quot;&gt;EmailAddress&lt;/span&gt;(addressToValidate: &lt;span class=&quot;string&quot;&gt;&quot;dohn.joe@somecompany.com&quot;&lt;/span&gt;) &lt;span class=&quot;keyword&quot;&gt;else&lt;/span&gt; {
     &lt;span class=&quot;call&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;Not&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;valid&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;email&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;address!&quot;&lt;/span&gt;)
 }
 
@@ -274,11 +274,11 @@ either much larger or much smaller than we expected during development. For exam
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to &lt;em&gt;not&lt;/em&gt; do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.</summary></entry><entry><title type="html">Using enums to create flexible data models</title><link href="/2018/08/15/using-enums-to-create-flexible-data-models.html" rel="alternate" type="text/html" title="Using enums to create flexible data models" /><published>2018-08-15T00:00:00+02:00</published><updated>2018-08-15T00:00:00+02:00</updated><id>/2018/08/15/using-enums-to-create-flexible-data-models</id><content type="html" xml:base="/2018/08/15/using-enums-to-create-flexible-data-models.html">&lt;p&gt;In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called &lt;em&gt;associated values&lt;/em&gt; of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.&lt;/p&gt;
+&lt;p&gt;That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to not do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.</summary></entry><entry><title type="html">Using enums to create flexible data models</title><link href="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html" rel="alternate" type="text/html" title="Using enums to create flexible data models" /><published>2018-08-15T22:32:38+02:00</published><updated>2018-08-15T22:32:38+02:00</updated><id>http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models</id><content type="html" xml:base="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html">&lt;p&gt;In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.&lt;/p&gt;
 
 &lt;p&gt;Enough chit-chat, let’s write some code! Let’s say we’re making an app for a restaurant, with a menu made up of different categories of food. We might create a simple struct like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;
 }
@@ -286,7 +286,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;This restaurant wants it’s food to be grouped by either of the categories meat, fish or dessert, so we’ll create an enum within our struct and add a case for each category.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; category: &lt;span class=&quot;type&quot;&gt;Category&lt;/span&gt;
@@ -301,13 +301,13 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We can now create different types of dishes like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; cheeseburger = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Cheeseburger&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;meat&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; cheeseburger = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Cheeseburger&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;meat&lt;/span&gt;)
 &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; bananaSplit = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Banana&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Split&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;dessert&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;After a bit of coding, we realise we need to add beverages to the menu. Since drinks also have names and prices it seems reasonable to group these with the other menu items:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; category: &lt;span class=&quot;type&quot;&gt;Category&lt;/span&gt;
@@ -323,7 +323,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;In this particular restaurant, all drinks come in sizes big or small, so we’ll want a way to store that data as well. One way to do this would be to add a Size enum to our MenuItem struct, and then add a size property to hold this value. Since all edible menu items come in one size only it wouldn’t make sense for them to have a size value, so that property would need to be optional:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; category: &lt;span class=&quot;type&quot;&gt;Category&lt;/span&gt;
@@ -345,7 +345,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;We could now create instances of MenuItem like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; bigMojito = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Mojito&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;beverage&lt;/span&gt;, size: .&lt;span class=&quot;dotAccess&quot;&gt;big&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; bigMojito = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Mojito&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;beverage&lt;/span&gt;, size: .&lt;span class=&quot;dotAccess&quot;&gt;big&lt;/span&gt;)
 &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; bolognese = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Spaghetti&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Bolognese&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;7&lt;/span&gt;, category: .&lt;span class=&quot;dotAccess&quot;&gt;meat&lt;/span&gt;, size: &lt;span class=&quot;keyword&quot;&gt;nil&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -355,7 +355,7 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;This is were things could be solved quite nicely by using an enum. As mentioned earlier, enum cases can store associated values of all kinds which make them just as fit for structuring data. Let’s rethink our menu a bit and replace the MenuItem struct with an enum. We’ll start by just adding the non-liquid categories to our enum:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; meat(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; fish(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; dessert(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
@@ -364,12 +364,12 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;The parameters (name, price) are the associated values, and these are passed like any function arguments when creating an instance of the enum case. For example, we would now create our cheeseburger object like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; cheeseburger = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;meat&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Cheeseburger&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; cheeseburger = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;meat&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Cheeseburger&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;The names, types and amount of associated values for each case are completely detached from those of the other cases. This will be clear as we’ll now add our beverage case to the MenuItem enum. Since we still want our drinks to have different sizes, we’ll also add the Size enum as a member of MenuItem.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; meat(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; fish(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; dessert(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
@@ -384,13 +384,13 @@ either much larger or much smaller than we expected during development. For exam
 
 &lt;p&gt;Notice how we now have drink case with a unique size parameter. Instead of having to bother with passing nil values for other items, we have a nice set of categories which are all of the same type (MenuItem), but can be easily extendable. We could now create items like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; seaBass = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;fish&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Grilled&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Sea&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Bass&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;7&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; seaBass = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;fish&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Grilled&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Sea&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Bass&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;7&lt;/span&gt;)
 &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; frozenMargarita = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;drink&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Frozen&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Margarita&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;5&lt;/span&gt;, size: .&lt;span class=&quot;dotAccess&quot;&gt;big&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;What’s really good about this technique is it’s flexibility - we can easily add or remove properties from any case without affecting the others. For example, sometime down the road we might decide that our app users should be able to choose how their meat will be prepared (it’s &lt;em&gt;doneness&lt;/em&gt; - rare, medium etc.). We might also decide that all desserts should be free of charge, and thus won’t need a price property. This could easily be changed in our enum without bothering with optionals:&lt;/p&gt;
+&lt;p&gt;What’s really good about this technique is it’s flexibility - we can easily add or remove properties from any case without affecting the others. For example, sometime down the road we might decide that our app users should be able to choose how their meat will be prepared (it’s doneness - rare, medium etc.). We might also decide that all desserts should be free of charge, and thus won’t need a price property. This could easily be changed in our enum without bothering with optionals:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;enum&lt;/span&gt; MenuItem {
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; meat(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;, doneness: &lt;span class=&quot;type&quot;&gt;Doneness&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; fish(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;, price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt;)
     &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; dessert(name: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;)
@@ -404,14 +404,15 @@ either much larger or much smaller than we expected during development. For exam
 
     ...
 }
+&lt;/code&gt;&lt;/pre&gt;
 
-&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; steak = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;meat&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Steak&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;8&lt;/span&gt;, doneness: .&lt;span class=&quot;dotAccess&quot;&gt;rare&lt;/span&gt;)
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; steak = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;meat&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Steak&quot;&lt;/span&gt;, price: &lt;span class=&quot;number&quot;&gt;8&lt;/span&gt;, doneness: .&lt;span class=&quot;dotAccess&quot;&gt;rare&lt;/span&gt;)
 &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; freeDessert = &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;dessert&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Creme&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Brulee&quot;&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Just as struct and classes, enums in Swift can also contain logic in the form of methods and computed properties. Why not serve drinks at half the price on Sundays:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;Dish&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;Dish&lt;/span&gt; {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt; {
         &lt;span class=&quot;keyword&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt; {
         &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;beverage&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;, price, &lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;):

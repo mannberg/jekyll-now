@@ -4,20 +4,20 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
 <title>Failable initializers and self-validating models | Mannberg on Swift</title>
-<meta name="generator" content="Jekyll v3.8.4" />
+<meta name="generator" content="Jekyll v3.8.5" />
 <meta property="og:title" content="Failable initializers and self-validating models" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along." />
 <meta property="og:description" content="Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along." />
-<link rel="canonical" href="/2018/08/20/failable-initializers-and-self-validating-models.html" />
-<meta property="og:url" content="/2018/08/20/failable-initializers-and-self-validating-models.html" />
+<link rel="canonical" href="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html" />
+<meta property="og:url" content="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html" />
 <meta property="og:site_name" content="Mannberg on Swift" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2018-08-20T00:00:00+02:00" />
+<meta property="article:published_time" content="2018-08-20T22:32:38+02:00" />
 <script type="application/ld+json">
-{"url":"/2018/08/20/failable-initializers-and-self-validating-models.html","headline":"Failable initializers and self-validating models","dateModified":"2018-08-20T00:00:00+02:00","datePublished":"2018-08-20T00:00:00+02:00","description":"Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.","mainEntityOfPage":{"@type":"WebPage","@id":"/2018/08/20/failable-initializers-and-self-validating-models.html"},"@type":"BlogPosting","@context":"http://schema.org"}</script>
+{"description":"Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.","@type":"BlogPosting","url":"http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html","headline":"Failable initializers and self-validating models","dateModified":"2018-08-20T22:32:38+02:00","datePublished":"2018-08-20T22:32:38+02:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Mannberg on Swift" /></head>
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mannberg on Swift" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Mannberg on Swift</a><nav class="site-nav">
@@ -40,11 +40,7 @@
   <header class="post-header">
     <h1 class="post-title p-name" itemprop="name headline">Failable initializers and self-validating models</h1>
     <p class="post-meta">
-        Syntax highlighting powered by
-        <a class="u-url" href="https://github.com/JohnSundell/Splash">Splash</a>
-    </p>
-    <p class="post-meta">
-      <time class="dt-published" datetime="2018-08-20T00:00:00+02:00" itemprop="datePublished">Aug 20, 2018
+      <time class="dt-published" datetime="2018-08-20T22:32:38+02:00" itemprop="datePublished">Aug 20, 2018
       </time></p>
   </header>
 
@@ -53,7 +49,7 @@
 
 <p>First, well create a <code class="highlighter-rouge">User</code> struct:</p>
 
-<pre><code><span class="keyword">struct</span> User {
+<pre class="splash"><code><span class="keyword">struct</span> User {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> emailAddress: <span class="type">String</span>
 }
@@ -63,7 +59,7 @@
 
 <p>Before we pass user data on to our backend, we’ll want some local validation logic for the email address. One possible place to put this code could be in some sort of dedicated validator struct:</p>
 
-<pre><code><span class="keyword">struct</span> EmailValidator {
+<pre class="splash"><code><span class="keyword">struct</span> EmailValidator {
     <span class="keyword">func</span> isValidEmailAddress(<span class="keyword">_</span> string: <span class="type">String</span>) -&gt; <span class="type">Bool</span> {
         ...
         <span class="keyword">return</span> valueOfValidation
@@ -73,7 +69,7 @@
 
 <p>We could now use our validator like this:</p>
 
-<pre><code><span class="keyword">let</span> addressToValidate = <span class="string">"dohn.joe@somecompany.com"</span>
+<pre class="splash"><code><span class="keyword">let</span> addressToValidate = <span class="string">"dohn.joe@somecompany.com"</span>
 <span class="keyword">if</span> <span class="type">EmailValidator</span>().<span class="call">isValidEmailAddress</span>(addressToValidate) {
     <span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: addressToValidate)
 }
@@ -81,12 +77,12 @@
 
 <p>Besides a Validator being a inelegant name for a class or struct, another problem with <code class="highlighter-rouge">EmailValidator</code> is that it’s usage is optional. By mistake we could bypass email validation and still create a user object, leaving room for potential errors:</p>
 
-<pre><code><span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">""</span>)
+<pre class="splash"><code><span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">""</span>)
 </code></pre>
 
-<p>A possible (but not very elegant) way to solve this could be injecting the validator into our <code class="highlighter-rouge">User</code> struct. We could also add what is called a <em>failable initalizer</em> to <code class="highlighter-rouge">User</code>, which is an init method that returns either an object or a nil value, depending on whatever conditions we set. In this way, we would always have to pass a valid email address to get a instance rather than getting nil:</p>
+<p>A possible (but not very elegant) way to solve this could be injecting the validator into our <code class="highlighter-rouge">User</code> struct. We could also add what is called a failable initalizer to <code class="highlighter-rouge">User</code>, which is an init method that returns either an object or a nil value, depending on whatever conditions we set. In this way, we would always have to pass a valid email address to get a instance rather than getting nil:</p>
 
-<pre><code><span class="keyword">struct</span> User {
+<pre class="splash"><code><span class="keyword">struct</span> User {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> emailAddress: <span class="type">String</span>
 
@@ -104,7 +100,7 @@
 
 <p>This would allow us to create users like this:</p>
 
-<pre><code><span class="keyword">if</span> <span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">"dohn.joe@somecompany.com"</span>, validator: <span class="type">EmailValidator</span>())
+<pre class="splash"><code><span class="keyword">if</span> <span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">"dohn.joe@somecompany.com"</span>, validator: <span class="type">EmailValidator</span>())
 {
     <span class="comment">//We</span> <span class="comment">have</span> <span class="comment">a</span> <span class="comment">user!</span>
 }
@@ -114,7 +110,7 @@
 
 <p>If we ever want to change our business logic to allow a user to register without an email address, we would now have to make not only one but two parameters optional, since it would not make sense to have a non-optional validator for an optional value:</p>
 
-<pre><code><span class="keyword">struct</span> User {
+<pre class="splash"><code><span class="keyword">struct</span> User {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> emailAddress: <span class="type">String</span>?
 
@@ -126,12 +122,12 @@
 
 <p>This would give us quite a weird interface where we could pass an email address without a validator:</p>
 
-<pre><code><span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">"dohn.joe@somecompany.com"</span>, validator: <span class="keyword">nil</span>)
+<pre class="splash"><code><span class="keyword">let</span> user = <span class="type">User</span>(name: <span class="string">"Dohn</span> <span class="string">Joe"</span>, emailAddress: <span class="string">"dohn.joe@somecompany.com"</span>, validator: <span class="keyword">nil</span>)
 </code></pre>
 
 <p>A cleaner way to do this is to put the validation where it belongs, which is with the email address rather with the user. We’ll create an <code class="highlighter-rouge">EmailAddress</code> struct containing both the actual <code class="highlighter-rouge">String</code> value for the address, and the validation logic. If we also add a failable initializer just as we did with <code class="highlighter-rouge">User</code>, we make sure we only get an object instance to work with if our precondtions are met.</p>
 
-<pre><code><span class="keyword">struct</span> EmailAddress {
+<pre class="splash"><code><span class="keyword">struct</span> EmailAddress {
     <span class="comment">//A</span> <span class="comment">private</span> <span class="comment">setter</span> <span class="comment">allows</span> <span class="comment">us</span> <span class="comment">to</span> <span class="comment">retrieve,</span> <span class="comment">but</span> <span class="comment">not</span> <span class="comment">change,</span> <span class="comment">the</span> <span class="comment">string</span> <span class="comment">value</span> <span class="comment">from</span> <span class="comment">outside</span> <span class="comment">our</span> <span class="comment">struct</span>
     <span class="keyword">private</span> (set)<span class="keyword">var</span> value: <span class="type">String</span>
 
@@ -152,7 +148,7 @@
 
 <p><code class="highlighter-rouge">User</code> will then hold a reference to <code class="highlighter-rouge">EmailAddress</code>:</p>
 
-<pre><code><span class="keyword">struct</span> User {
+<pre class="splash"><code><span class="keyword">struct</span> User {
     <span class="keyword">var</span> name: <span class="type">String</span>
     <span class="keyword">var</span> emailAddress: <span class="type">EmailAddress</span>
 
@@ -165,7 +161,7 @@
 
 <p>We now have a lot cleaner api where the user does not have to bother with email validation, and we as coders don’t have to bother with non-natural sounding structs named stuff like Validator.</p>
 
-<pre><code><span class="keyword">guard</span> <span class="keyword">let</span> validAddress = <span class="type">EmailAddress</span>(addressToValidate: <span class="string">"dohn.joe@somecompany.com"</span>) <span class="keyword">else</span> {
+<pre class="splash"><code><span class="keyword">guard</span> <span class="keyword">let</span> validAddress = <span class="type">EmailAddress</span>(addressToValidate: <span class="string">"dohn.joe@somecompany.com"</span>) <span class="keyword">else</span> {
     <span class="call">print</span>(<span class="string">"Not</span> <span class="string">a</span> <span class="string">valid</span> <span class="string">email</span> <span class="string">address!"</span>)
 }
 
@@ -176,7 +172,7 @@
 
 <p>If we’re later adding more data types to <code class="highlighter-rouge">User</code> that also needs validation, we could follow the same structure. If we’re adding several types we might want to create a protocol:</p>
 
-<pre><code><span class="keyword">protocol</span> Validatable {
+<pre class="splash"><code><span class="keyword">protocol</span> Validatable {
     <span class="keyword">var</span> value: <span class="type">String</span> { <span class="keyword">get</span> }
     <span class="keyword">func</span> isValid(<span class="keyword">_</span> string: <span class="type">String</span>) -&gt; <span class="type">Bool</span>
 }
@@ -203,7 +199,7 @@
 
 <p>We’ll add an instance of <code class="highlighter-rouge">CreditCard</code> to <code class="highlighter-rouge">User</code> and now we can create user objects like this:</p>
 
-<pre><code><span class="keyword">guard</span> <span class="keyword">let</span> validAddress = <span class="type">EmailAddress</span>(addressToValidate: <span class="string">"dohn.joe@somecompany.com"</span>) <span class="keyword">else</span> {
+<pre class="splash"><code><span class="keyword">guard</span> <span class="keyword">let</span> validAddress = <span class="type">EmailAddress</span>(addressToValidate: <span class="string">"dohn.joe@somecompany.com"</span>) <span class="keyword">else</span> {
     <span class="call">print</span>(<span class="string">"Not</span> <span class="string">a</span> <span class="string">valid</span> <span class="string">email</span> <span class="string">address!"</span>)
 }
 
@@ -216,7 +212,7 @@
 }
 </code></pre>
 
-<p>That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to <em>not</em> do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!</p>
+<p>That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to not do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!</p>
 
   </div><a class="u-url" href="/2018/08/20/failable-initializers-and-self-validating-models.html" hidden></a>
 </article>
@@ -235,7 +231,7 @@
           <li class="p-name">Mannberg on Swift</li></ul>
       </div>
 
-      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/andersmannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">andersmannberg</span></a></li></ul>
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">mannberg</span></a></li><li><a href="https://www.twitter.com/mannberg"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">mannberg</span></a></li></ul>
 </div>
 
       <div class="footer-col footer-col-3">
