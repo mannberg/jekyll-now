@@ -1,4 +1,185 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-12-11T23:01:08+01:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Testing your UI using method swizzling</title><link href="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html" rel="alternate" type="text/html" title="Testing your UI using method swizzling" /><published>2018-10-07T22:32:38+02:00</published><updated>2018-10-07T22:32:38+02:00</updated><id>http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling</id><content type="html" xml:base="http://localhost:4000/2018/10/07/testing-your-ui-using-method-swizzling.html">&lt;p&gt;Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2018-12-25T13:15:03+01:00</updated><id>/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Avoid mocking by swapping method implementations</title><link href="/2018/12/19/mocking.html" rel="alternate" type="text/html" title="Avoid mocking by swapping method implementations" /><published>2018-12-19T21:00:00+01:00</published><updated>2018-12-19T21:00:00+01:00</updated><id>/2018/12/19/mocking</id><content type="html" xml:base="/2018/12/19/mocking.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+
+&lt;p&gt;Often when we want to test code that depends on external resources such as a backend or a local database, we need to mock those dependencies. Mocking usually consists of defining a protocol which our other objects depend on rather than depending on a concrete implementation, as well as creating at least two classes/structs that implement that protocol - one that’s used in our app, and at least one mock version used for testing.&lt;/p&gt;
+
+&lt;p&gt;This choice of path usually ends up in writing lots of boilerplate code, in addition to all the extra code we’re already writing for our tests. Few people would probably argue against testing as a good thing, but in the harsh reality of tight deadlines it’s no secret that test code is constantly in harm’s way. So, anything we can do to make writing tests less of a hassle, we should.&lt;/p&gt;
+
+&lt;p&gt;In this article we’re going to a explore a less object-oriented approach, in which we’ll mock methods rather than entire objects.&lt;/p&gt;
+
+&lt;h3 id=&quot;fetching-movies&quot;&gt;Fetching movies&lt;/h3&gt;
+
+&lt;p&gt;Let’s say we have a simple app that fetches a bunch of movies from an api and presents them in a &lt;code class=&quot;highlighter-rouge&quot;&gt;MovieListViewController&lt;/code&gt;. To do this, we need some sort of &lt;code class=&quot;highlighter-rouge&quot;&gt;APIService&lt;/code&gt; that makes network requests to fetch that data.&lt;/p&gt;
+
+&lt;p&gt;Since we want to write tests for objects depending on this class, we want to be able to mock it, so we start by defining a protocol as follows&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;protocol&lt;/span&gt; NetworkFetching {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies(result: (&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then we create the concrete implementation that will be used used in our app…&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; APIService: &lt;span class=&quot;type&quot;&gt;NetworkFetching&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies(result: (&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) {
+        &lt;span class=&quot;comment&quot;&gt;//Perform&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;network&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;fetch&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;movies&lt;/span&gt;
+        ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;… and then our mocked class.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MockAPIService: &lt;span class=&quot;type&quot;&gt;NetworkFetching&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies(result: (&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) {
+        &lt;span class=&quot;comment&quot;&gt;//Return&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;hard-coded&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;result&lt;/span&gt;
+        ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We’ve designed our app so that &lt;code class=&quot;highlighter-rouge&quot;&gt;MovieListViewController&lt;/code&gt; has a &lt;code class=&quot;highlighter-rouge&quot;&gt;MovieListViewModel&lt;/code&gt;, which in turn has a reference to an &lt;code class=&quot;highlighter-rouge&quot;&gt;APIService&lt;/code&gt; instance implementing the &lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkFetching&lt;/code&gt; protocol. The view model also has a &lt;code class=&quot;highlighter-rouge&quot;&gt;state&lt;/code&gt; property which our view controller binds to in order to update it’s views. We might, for example, want to show/hide a loading indicator as we’re waiting for/presenting data, and show error messages if the request should fail.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; MovieListViewModel {
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; apiService = factory.&lt;span class=&quot;call&quot;&gt;makeAPIService&lt;/span&gt;()
+    ...
+    
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies() {
+        state = .&lt;span class=&quot;dotAccess&quot;&gt;loading&lt;/span&gt;
+        apiService.&lt;span class=&quot;call&quot;&gt;fetchMovies&lt;/span&gt; { result &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;switch&lt;/span&gt; result {
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;success&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; movies):
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;movies&lt;/span&gt; = movies
+                state = .&lt;span class=&quot;dotAccess&quot;&gt;doneLoading&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;failure&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; error):
+                state = .&lt;span class=&quot;dotAccess&quot;&gt;failedLoading&lt;/span&gt;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We now decide we want a unit test that ensures our view model always correctly updates it’s state property to &lt;code class=&quot;highlighter-rouge&quot;&gt;.doneLoading&lt;/code&gt; when we get a successful reponse from our backend. In other words, we want to test our view model’s &lt;code class=&quot;highlighter-rouge&quot;&gt;fetchMovies&lt;/code&gt; method but mock out the actual network request in our &lt;code class=&quot;highlighter-rouge&quot;&gt;APIService&lt;/code&gt;. We also want to make sure our view model’s &lt;code class=&quot;highlighter-rouge&quot;&gt;movies&lt;/code&gt; property is updated as expected. So we’ll implement the mocked method to just return hard-coded data&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; MockAPIService: &lt;span class=&quot;type&quot;&gt;NetworkFetching&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies(handler: (&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) {
+        &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; movies = [
+            &lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;(title: &lt;span class=&quot;string&quot;&gt;&quot;Forrest&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Gump&quot;&lt;/span&gt;, rating: &lt;span class=&quot;number&quot;&gt;5&lt;/span&gt;),
+        ]
+
+        &lt;span class=&quot;call&quot;&gt;handler&lt;/span&gt;(.&lt;span class=&quot;dotAccess&quot;&gt;success&lt;/span&gt;(movies))   
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then, we’ll write our test&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; testFetchMoviesSuccessShouldSetStateToDoneLoading {
+    &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; viewModel = &lt;span class=&quot;type&quot;&gt;MovieListViewModel&lt;/span&gt;(factory: &lt;span class=&quot;type&quot;&gt;MockFactory&lt;/span&gt;())
+
+    viewModel.&lt;span class=&quot;call&quot;&gt;fetchMovies&lt;/span&gt;()
+    &lt;span class=&quot;type&quot;&gt;XCTAssertTrue&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;state&lt;/span&gt; == .&lt;span class=&quot;dotAccess&quot;&gt;doneLoading&lt;/span&gt;)
+    &lt;span class=&quot;type&quot;&gt;XCTAssertTrue&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;movies&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;count&lt;/span&gt; == &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;One thing to note is that we’re using a Factory to set up our objects and inject that Factory rather than making our objects responsible for injecting and creating other objects. This pattern is really great for isolating dependencies, but by using this approach together with mocking, we probably also want to create a MockFactory that implements a &lt;code class=&quot;highlighter-rouge&quot;&gt;Factory&lt;/code&gt; protocol. In other words, even more boilerplate code!&lt;/p&gt;
+
+&lt;h3 id=&quot;just-in-time-mocking&quot;&gt;“Just-in-time” mocking&lt;/h3&gt;
+
+&lt;p&gt;Perhaps it’s time we stop and think about what part of all that extra code that was actually needed for us in order to test our code. The &lt;code class=&quot;highlighter-rouge&quot;&gt;MockAPIService&lt;/code&gt; class has no real value in itself rather than being a wrapper for the mocked &lt;code class=&quot;highlighter-rouge&quot;&gt;fetchMovies&lt;/code&gt; method whose output - a result type containing a hard-coded list of movies - we were interested in. And although the protocol-oriented nature of Swift is really great, it’s not unusual that we end up with protocols that are there just for the sake of mocking.&lt;/p&gt;
+
+&lt;p&gt;Perhaps we could try a more functional approach! So let’s redo this a bit. Firstly, we’ll scrap our &lt;code class=&quot;highlighter-rouge&quot;&gt;MockAPIService&lt;/code&gt; as well as the &lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkFetching&lt;/code&gt; protocol. Also, away with the unnecessary &lt;code class=&quot;highlighter-rouge&quot;&gt;MockFactory&lt;/code&gt; implementation.&lt;/p&gt;
+
+&lt;p&gt;We’ll then rewrite our &lt;code class=&quot;highlighter-rouge&quot;&gt;ApiService&lt;/code&gt; from this…&lt;/p&gt;
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; APIService: &lt;span class=&quot;type&quot;&gt;NetworkFetching&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; fetchMovies(result: (&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) {
+        ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;… to this&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; APIService {
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; fetchMovies: ((&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt; = { handler &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+        ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Our &lt;code class=&quot;highlighter-rouge&quot;&gt;fetchMovies&lt;/code&gt; method still has the exact same function signature as it did before…&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;((&lt;span class=&quot;type&quot;&gt;Result&lt;/span&gt;&amp;lt;&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;&amp;gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;… but we redefined it using closure syntax and stored it in a variable, the latter being key since mutability is just what we’re after here.&lt;/p&gt;
+
+&lt;p&gt;Now that we’ve scrapped 2 protocols and 2 mocked classes, we should try to rewrite our unit test.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; testFetchMoviesSuccessShouldSetStateToDoneLoading {
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; viewModel = &lt;span class=&quot;type&quot;&gt;MovieListViewModel&lt;/span&gt;(factory: &lt;span class=&quot;type&quot;&gt;Factory&lt;/span&gt;())
+
+    viewModel.&lt;span class=&quot;property&quot;&gt;apiService&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;fetchMovies&lt;/span&gt; = { handler &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+        &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; movies = [
+            &lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;(title: &lt;span class=&quot;string&quot;&gt;&quot;Forrest&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Gump&quot;&lt;/span&gt;, rating: &lt;span class=&quot;number&quot;&gt;5&lt;/span&gt;),
+        ]
+
+        &lt;span class=&quot;call&quot;&gt;handler&lt;/span&gt;(.&lt;span class=&quot;dotAccess&quot;&gt;success&lt;/span&gt;(movies))   
+    }
+
+    viewModel.&lt;span class=&quot;call&quot;&gt;fetchMovies&lt;/span&gt;()
+    &lt;span class=&quot;type&quot;&gt;XCTAssertTrue&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;state&lt;/span&gt; == .&lt;span class=&quot;dotAccess&quot;&gt;doneLoading&lt;/span&gt;)
+    &lt;span class=&quot;type&quot;&gt;XCTAssertTrue&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;movies&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;count&lt;/span&gt; == &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Notice that by just swapping a method implementation, we could easily mock the state we needed to test our code. Since we removed the mock classes and also the protocols that were really just there for testing purposes, all our test-specific code is right now contained in our test target, right where it belongs!&lt;/p&gt;
+
+&lt;p&gt;One great thing about this approach is it’s flexibility. For example, we might want to mock several different types of network responses to test how our depending classes behave. This is hassle-free and involves no creation of additional mock objects&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; testFetchMoviesErrorShouldSetStateToFailedLoading {
+    ...
+    viewModel.&lt;span class=&quot;property&quot;&gt;apiService&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;fetchMovies&lt;/span&gt; = { handler &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+        handler(.&lt;span class=&quot;dotAccess&quot;&gt;failure&lt;/span&gt;(.&lt;span class=&quot;dotAccess&quot;&gt;timeout&lt;/span&gt;))   
+    }
+
+    viewModel.&lt;span class=&quot;call&quot;&gt;fetchMovies&lt;/span&gt;()
+    &lt;span class=&quot;type&quot;&gt;XCTAssertTrue&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;state&lt;/span&gt; == .&lt;span class=&quot;dotAccess&quot;&gt;failedLoading&lt;/span&gt;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;drawbacks&quot;&gt;Drawbacks&lt;/h3&gt;
+
+&lt;p&gt;Ok, so here come the boring, mildly shocking, news: This solution is &lt;em&gt;not&lt;/em&gt; perfect 😲. Let’s look at some of the drawbacks.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Named parameters don’t work with closures&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Named parameters is, according to me, one of the things that makes Swift really stand out from many other languages. Unfortunately, defining our methods as mutable closures, we have to give up on this great feature&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;comment&quot;&gt;//this&lt;/span&gt;
+&lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;set&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; movie: &lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;, asFavorite favorite: &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt;) {...}
+
+&lt;span class=&quot;call&quot;&gt;set&lt;/span&gt;(someMovie, asFavorite: &lt;span class=&quot;keyword&quot;&gt;true&lt;/span&gt;)
+
+&lt;span class=&quot;comment&quot;&gt;//becomes&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;this&lt;/span&gt;
+&lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; set: (&lt;span class=&quot;type&quot;&gt;Movie&lt;/span&gt;, &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt;) = { movie, favorite &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt; ...}
+
+&lt;span class=&quot;call&quot;&gt;set&lt;/span&gt;(someMovie, true)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Mutability&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;It might seem as a bit of an anti-pattern to have all this mutable state floating around in our application. Actually, as far as methods are concerned, the risk of an object accidentally replacing a method implementation with another one is probably not that big.&lt;/p&gt;
+
+&lt;p&gt;Making stored properties mutable for the sake of testing flexibility, however, seems far riskier and is probably something we should avoid doing. Using computed properties or immutable stored properties as much as possible should be the way forward here.&lt;/p&gt;
+
+&lt;p&gt;Thanks a bunch for reading! Please feel free to reach out on &lt;a href=&quot;https://twitter.com/andersmannberg&quot;&gt;Twitter&lt;/a&gt; and share your thoughts on this and other Swifty topics!&lt;/p&gt;</content><author><name></name></author><summary type="html">Syntax highlighting powered by Splash</summary></entry><entry><title type="html">Testing your UI using method swizzling</title><link href="/2018/10/07/testing-your-ui-using-method-swizzling.html" rel="alternate" type="text/html" title="Testing your UI using method swizzling" /><published>2018-10-07T22:32:38+02:00</published><updated>2018-10-07T22:32:38+02:00</updated><id>/2018/10/07/testing-your-ui-using-method-swizzling</id><content type="html" xml:base="/2018/10/07/testing-your-ui-using-method-swizzling.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+
+&lt;p&gt;Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.&lt;/p&gt;
 
 &lt;h3 id=&quot;method-swizzling&quot;&gt;Method swizzling&lt;/h3&gt;
 
@@ -107,7 +288,9 @@
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Bugs come in many forms, and one of the classics is when our app’s UI is messed up by rendering data that is either much larger or much smaller than we expected during development. For example, if you’ve ever done work on an app, chances are good you’ve come across a label which overlaps other elements when it’s text gets too long, or clips the text in some unexpected, unwanted way. In this post, I’m going to show a neat trick on how to easily test the entire UI for this without adding lots of code, using a technique called method swizzling.</summary></entry><entry><title type="html">Failable initializers and self-validating models</title><link href="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html" rel="alternate" type="text/html" title="Failable initializers and self-validating models" /><published>2018-08-20T22:32:38+02:00</published><updated>2018-08-20T22:32:38+02:00</updated><id>http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models</id><content type="html" xml:base="http://localhost:4000/2018/08/20/failable-initializers-and-self-validating-models.html">&lt;p&gt;Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.&lt;/p&gt;
+&lt;p&gt;I really hope you enjoyed this post, and I would love to hear from you on Twitter. Thank you so much for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Syntax highlighting powered by Splash</summary></entry><entry><title type="html">Failable initializers and self-validating models</title><link href="/2018/08/20/failable-initializers-and-self-validating-models.html" rel="alternate" type="text/html" title="Failable initializers and self-validating models" /><published>2018-08-20T22:32:38+02:00</published><updated>2018-08-20T22:32:38+02:00</updated><id>/2018/08/20/failable-initializers-and-self-validating-models</id><content type="html" xml:base="/2018/08/20/failable-initializers-and-self-validating-models.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+
+&lt;p&gt;Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.&lt;/p&gt;
 
 &lt;p&gt;First, well create a &lt;code class=&quot;highlighter-rouge&quot;&gt;User&lt;/code&gt; struct:&lt;/p&gt;
 
@@ -137,7 +320,7 @@
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Besides a Validator being a inelegant name for a class or struct, another problem with &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailValidator&lt;/code&gt; is that it’s usage is optional. By mistake we could bypass email validation and still create a user object, leaving room for potential errors:&lt;/p&gt;
+&lt;p&gt;Personally, I’m not very fond of objects named things like &lt;code class=&quot;highlighter-rouge&quot;&gt;Validator&lt;/code&gt;. Even though it’s quite obvious what an &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailValidator&lt;/code&gt; does, I think this type of “extremely” object-oriented naming convention (every verb becomes a noun) often leads to having lots of classes that are hard to reason about and know how to use. But this is something I will elaborate on in a future post. Naming preferences aside, a problem with &lt;code class=&quot;highlighter-rouge&quot;&gt;EmailValidator&lt;/code&gt; in this case is that it’s usage is optional. By mistake we could bypass email validation and still create a user object, leaving room for potential errors:&lt;/p&gt;
 
 &lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;(name: &lt;span class=&quot;string&quot;&gt;&quot;Dohn&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Joe&quot;&lt;/span&gt;, emailAddress: &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt;)
 &lt;/code&gt;&lt;/pre&gt;
@@ -274,7 +457,9 @@
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to not do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Often when coding, we need to deal with validating user input. A typical example would be a registration form, where you’ll often have validation logic for email addresses, phone numbers, credit cards etc. This post is going to look at different examples of structuring this kind of code. Let’s use a really simple example, where a user has to fill in mandatory values for name and email address, where the latter will be validated locally. After completing the form, we’ll create a User object. We’re not going to bother at all with the actual validation logic here, but rather on creating the interface for it. We’ll start by writing code which can be improved and then refactor this as we go along.</summary></entry><entry><title type="html">Using enums to create flexible data models</title><link href="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html" rel="alternate" type="text/html" title="Using enums to create flexible data models" /><published>2018-08-15T22:32:38+02:00</published><updated>2018-08-15T22:32:38+02:00</updated><id>http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models</id><content type="html" xml:base="http://localhost:4000/2018/08/15/using-enums-to-create-flexible-data-models.html">&lt;p&gt;In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.&lt;/p&gt;
+&lt;p&gt;That’s all I had for this time. Hopefully you found something to your liking, and if not, that your disapproval of my coding style at least gave you some new fresh ideas on how to not do things :) I would love some feedback from anyone reading, so I’ll make sure to get comments to work ASAP. Thank you for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Syntax highlighting powered by Splash</summary></entry><entry><title type="html">Using enums to create flexible data models</title><link href="/2018/08/15/using-enums-to-create-flexible-data-models.html" rel="alternate" type="text/html" title="Using enums to create flexible data models" /><published>2018-08-15T22:32:38+02:00</published><updated>2018-08-15T22:32:38+02:00</updated><id>/2018/08/15/using-enums-to-create-flexible-data-models</id><content type="html" xml:base="/2018/08/15/using-enums-to-create-flexible-data-models.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+
+&lt;p&gt;In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.&lt;/p&gt;
 
 &lt;p&gt;Enough chit-chat, let’s write some code! Let’s say we’re making an app for a restaurant, with a menu made up of different categories of food. We might create a simple struct like this:&lt;/p&gt;
 
@@ -412,7 +597,7 @@
 
 &lt;p&gt;Just as struct and classes, enums in Swift can also contain logic in the form of methods and computed properties. Why not serve drinks at half the price on Sundays:&lt;/p&gt;
 
-&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;Dish&lt;/span&gt; {
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;MenuItem&lt;/span&gt; {
     &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; price: &lt;span class=&quot;type&quot;&gt;Int&lt;/span&gt; {
         &lt;span class=&quot;keyword&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt; {
         &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;beverage&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;, price, &lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;):
@@ -426,4 +611,4 @@
 
 &lt;p&gt;As you can see, enums can serve as a great alternative to structs and classes. Whenever you find yourself creating a struct containing an enum that declares different states defining it, chances are good you could refactor your struct to into being an actual enum.&lt;/p&gt;
 
-&lt;p&gt;Thanks for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">In this post we’re going to look at how enums can be used as alternatives to structs and classes for creating data models. In Swift, enum cases can have so called associated values of any type, which is basically the same thing as properties in structs/classes. This make them quite flexible, as each case can store values that are relevant only to itself, yet they are all part of the same enum type.</summary></entry></feed>
+&lt;p&gt;Thanks for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Syntax highlighting powered by Splash</summary></entry></feed>
