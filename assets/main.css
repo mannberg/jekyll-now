@@ -11,9 +11,9 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-  font: 400 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  color: #111;
-  background-color: #e7e7e7;
+  font: 400 16px/1.5 "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  color: #000000;
+  background-color: #ffffff;
   -webkit-text-size-adjust: 100%;
   -webkit-font-feature-settings: "kern" 1;
   -moz-font-feature-settings: "kern" 1;
@@ -70,18 +70,19 @@ li > ol {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 400; }
+  font-weight: 400;
+  color: #343536; }
 
 /**
  * Links
  */
 a {
-  color: #3f829c;
+  color: #343536;
   text-decoration: none; }
   a:visited {
-    color: #295566; }
+    color: #37445f; }
   a:hover {
-    color: #111;
+    color: #000000;
     text-decoration: underline; }
   .social-media-list a:hover {
     text-decoration: none; }
@@ -127,16 +128,16 @@ pre {
  * Wrapper
  */
 .wrapper {
-  max-width: -webkit-calc(800px - (30px * 2));
-  max-width: calc(800px - (30px * 2));
+  max-width: -webkit-calc(1000px - (30px * 2));
+  max-width: calc(1000px - (30px * 2));
   margin-right: auto;
   margin-left: auto;
   padding-right: 30px;
   padding-left: 30px; }
   @media screen and (max-width: 800px) {
     .wrapper {
-      max-width: -webkit-calc(800px - (30px));
-      max-width: calc(800px - (30px));
+      max-width: -webkit-calc(1000px - (30px));
+      max-width: calc(1000px - (30px));
       padding-right: 15px;
       padding-left: 15px; } }
 
@@ -169,7 +170,7 @@ table {
   margin-bottom: 30px;
   width: 100%;
   text-align: left;
-  color: #3f3f3f;
+  color: #2e2e2e;
   border-collapse: collapse;
   border: 1px solid #e8e8e8; }
   table tr:nth-child(even) {
@@ -193,8 +194,8 @@ table {
   position: relative; }
 
 .site-title {
-  font-size: 32px;
-  font-weight: 300;
+  font-size: 48px;
+  font-weight: 800;
   line-height: 54px;
   letter-spacing: -1px;
   margin-bottom: 0;
@@ -210,7 +211,7 @@ table {
   .site-nav .menu-icon {
     display: none; }
   .site-nav .page-link {
-    color: #111;
+    color: #000000;
     line-height: 1.5; }
     .site-nav .page-link:not(:last-child) {
       margin-right: 20px; }
@@ -219,7 +220,7 @@ table {
       position: absolute;
       top: 9px;
       right: 15px;
-      background-color: #e7e7e7;
+      background-color: #ffffff;
       border: 1px solid #e8e8e8;
       border-radius: 5px;
       text-align: right; }
@@ -341,7 +342,8 @@ table {
 .post-title {
   font-size: 42px;
   letter-spacing: -1px;
-  line-height: 1; }
+  line-height: 1;
+  color: #343536; }
   @media screen and (max-width: 800px) {
     .post-title {
       font-size: 36px; } }
@@ -561,7 +563,7 @@ pre code .comment {
   color: #6b8a94; }
 
 pre code .dotAccess {
-  color: #92b300; }
+  color: #e4e008; }
 
 pre code .preprocessing {
   color: #fba15e; }
