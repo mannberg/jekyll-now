@@ -1,4 +1,231 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2019-01-21T22:10:04+01:00</updated><id>/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Avoid mocking by swapping method implementations</title><link href="/2018/12/19/mocking.html" rel="alternate" type="text/html" title="Avoid mocking by swapping method implementations" /><published>2018-12-19T21:00:00+01:00</published><updated>2018-12-19T21:00:00+01:00</updated><id>/2018/12/19/mocking</id><content type="html" xml:base="/2018/12/19/mocking.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2019-03-05T21:39:43+01:00</updated><id>/feed.xml</id><title type="html">Mannberg on Swift</title><entry><title type="html">Not quite UI tests</title><link href="/2019/03/05/not-quite-ui-tests.html" rel="alternate" type="text/html" title="Not quite UI tests" /><published>2019-03-05T20:40:00+01:00</published><updated>2019-03-05T20:40:00+01:00</updated><id>/2019/03/05/not-quite-ui-tests</id><content type="html" xml:base="/2019/03/05/not-quite-ui-tests.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
+
+&lt;h3 id=&quot;my-issue-with-ui-tests&quot;&gt;My issue with UI tests&lt;/h3&gt;
+
+&lt;p&gt;So, I kind of have a problem with UI tests. I’ve tried them, but did not particularly like them. Actually, I really don’t like that I don’t like them, since I think the problem they are aiming to solve is extremely important. Testing how your system acts as a whole, rather than just testing it’s parts in isolation, is a brilliant idea. The problem I have is that I find UI tests in their current shape to be badly cut out for solving such an important problem.&lt;/p&gt;
+
+&lt;p&gt;My issue with UI tests basically boils down to two points:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;They’re slow.&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;UI tests are slow since they consist of actual interactions with your UI. Even though automated tapping of buttons can be pretty darned quick, you still need to wait for all those pretty view controller transitions, animations and possibly slow network requests. Also, since UI tests run in an actual instance of your app, you can’t just fire up any view controller and test it in isolation. This means that if you have a view controller that’s eleven button taps away from your user, it’s going to be eleven button taps (and who knows what else) away at the beginning of your test session.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;They’re black box tests.&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;When we use UI tests as opposed to unit tests, we give up on all the control we have over our system. We’re constrained by dependecies such as the backend and local databases, which we can mock to our heart’s content while we’re doing unit tests. One thing that’s often highlighted about UI tests is the fact that they’re testing a non-altered app session, free from possibly incorrect developer assumptions and test code bugs. This is definitively something worth highlighting, but I think it’s also worth highlighting that since they have all these dependencies that can’t be controlled, the app session they test tends to often become very restricted and not very representative of what the end user would experience anyway.&lt;/p&gt;
+
+&lt;h3 id=&quot;something-in-between&quot;&gt;Something in between&lt;/h3&gt;
+
+&lt;p&gt;What I would like us to try out in this post, is to come as close as possible to UI tests while still being able to tweak our code just as when we’re doing unit tests. To achieve this we’re going to use logic-free view controllers together with view models set up with data bindings. What I mean by logic-free is that the only thing our view controller is going to care about is sending it’s current state to the view model, receive a new state from said view model, and render itself accordingly.&lt;/p&gt;
+
+&lt;p&gt;For sake of simplicity, we’re not going to use &lt;code class=&quot;highlighter-rouge&quot;&gt;RxSwift&lt;/code&gt; or any other 3rd party library for our bindings, but rather just the tools that are provided by Swift out of the box. However, there shouldn’t be any problem applying the same techniques using &lt;code class=&quot;highlighter-rouge&quot;&gt;Rx&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Bond&lt;/code&gt; or any other great framework out there.&lt;/p&gt;
+
+&lt;p&gt;The app we’re going to build to try these techniques is a very simple one: a login page with two fields (email and password), a login button with two different states (enabled/disabled), a loading indicator and a small label which will tell what, if anything, went wrong when trying to log in.&lt;/p&gt;
+
+&lt;h3 id=&quot;inputs--outputs&quot;&gt;Inputs &amp;amp; outputs&lt;/h3&gt;
+
+&lt;p&gt;Starting off by setting up our view model, I’m gonna straight off borrow a concept from the awesome, open-sourced &lt;a href=&quot;https://github.com/kickstarter/ios-oss&quot;&gt;Kickstarter&lt;/a&gt; app, where view models are defined as containing &lt;code class=&quot;highlighter-rouge&quot;&gt;inputs&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;outputs&lt;/code&gt;, represented by two different protocols. In this case, we’re going to call them &lt;code class=&quot;highlighter-rouge&quot;&gt;LoginViewModelInputs&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;LoginViewModelOutputs&lt;/code&gt;. &lt;code class=&quot;highlighter-rouge&quot;&gt;Inputs&lt;/code&gt; is going to hold functions that will be triggered by events: in this example we’re going to deal only with events that are fired whenever the user interacts with the app (text input, tapping buttons), but it could’ve also been system events such as the view being loaded or the app going into background mode. &lt;code class=&quot;highlighter-rouge&quot;&gt;Outputs&lt;/code&gt; will contain methods that the view controller listens to in order to re-render itself when the view model changes it’s state.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;protocol&lt;/span&gt; LoginViewModelInputs {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; didPressLoginButton()
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; emailDidChange(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; sender: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt;)
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; passwordDidChange(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; sender: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt;)
+}
+
+&lt;span class=&quot;keyword&quot;&gt;protocol&lt;/span&gt; LoginViewModelOutputs {
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; userInputIsValid: ((&lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;)? { &lt;span class=&quot;keyword&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;set&lt;/span&gt; }
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; changedLoadingState: ((&lt;span class=&quot;type&quot;&gt;LoginViewModel&lt;/span&gt;.&lt;span class=&quot;type&quot;&gt;State&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Void&lt;/span&gt;)? { &lt;span class=&quot;keyword&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;set&lt;/span&gt; }
+}
+
+&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; LoginViewModel: &lt;span class=&quot;type&quot;&gt;LoginViewModelInputs&lt;/span&gt;, &lt;span class=&quot;call&quot;&gt;LoginViewModelOutputs&lt;/span&gt; {
+    ...
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; inputs: &lt;span class=&quot;type&quot;&gt;LoginViewModelInputs&lt;/span&gt; = { &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt; }()
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; outputs: &lt;span class=&quot;type&quot;&gt;LoginViewModelOutputs&lt;/span&gt; = { &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt; }()
+    ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next we’re setting up our view controller. We’ll define a &lt;code class=&quot;highlighter-rouge&quot;&gt;setupBindings&lt;/code&gt; method where we pass all our user input along to the view model while also listening to it’s output to update our UI.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; LoginViewController: &lt;span class=&quot;type&quot;&gt;UIViewController&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; viewModel = &lt;span class=&quot;type&quot;&gt;LoginViewModel&lt;/span&gt;()
+    
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; emailField: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt; ...
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; passwordField: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt; ...
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; infoLabel: &lt;span class=&quot;type&quot;&gt;UILabel&lt;/span&gt; ...
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; indicator: &lt;span class=&quot;type&quot;&gt;UIActivityIndicatorView&lt;/span&gt; ...
+    &lt;span class=&quot;keyword&quot;&gt;lazy&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; loginButton: &lt;span class=&quot;type&quot;&gt;UIButton&lt;/span&gt; ...
+    
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; setupBindings() {
+        &lt;span class=&quot;comment&quot;&gt;//view&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;model&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;inputs&lt;/span&gt;
+        loginButton.&lt;span class=&quot;call&quot;&gt;addTarget&lt;/span&gt;(viewModel, action: &lt;span class=&quot;keyword&quot;&gt;#selector&lt;/span&gt;(viewModel.&lt;span class=&quot;property&quot;&gt;didPressLoginButton&lt;/span&gt;), for: .&lt;span class=&quot;dotAccess&quot;&gt;touchUpInside&lt;/span&gt;)
+        emailField.&lt;span class=&quot;call&quot;&gt;addTarget&lt;/span&gt;(viewModel, action: &lt;span class=&quot;keyword&quot;&gt;#selector&lt;/span&gt;(viewModel.&lt;span class=&quot;call&quot;&gt;emailDidChange&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;:)), for: .&lt;span class=&quot;dotAccess&quot;&gt;editingChanged&lt;/span&gt;)
+        passwordField.&lt;span class=&quot;call&quot;&gt;addTarget&lt;/span&gt;(viewModel, action: &lt;span class=&quot;keyword&quot;&gt;#selector&lt;/span&gt;(viewModel.&lt;span class=&quot;call&quot;&gt;passwordDidChange&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;:)), for: .&lt;span class=&quot;dotAccess&quot;&gt;editingChanged&lt;/span&gt;)
+        
+        &lt;span class=&quot;comment&quot;&gt;//view&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;model&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;outputs&lt;/span&gt;
+        viewModel.&lt;span class=&quot;property&quot;&gt;outputs&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;userInputIsValid&lt;/span&gt; = { [unowned &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;] isValid &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isEnabled&lt;/span&gt; = isValid
+            &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;backgroundColor&lt;/span&gt; = isValid ? .&lt;span class=&quot;dotAccess&quot;&gt;green&lt;/span&gt; : .&lt;span class=&quot;dotAccess&quot;&gt;gray&lt;/span&gt;
+        }
+        
+        viewModel.&lt;span class=&quot;property&quot;&gt;outputs&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;changedLoadingState&lt;/span&gt; = { [unowned &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;] state &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;switch&lt;/span&gt; state {
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;loading&lt;/span&gt;:
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;indicator&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;startAnimating&lt;/span&gt;()
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;doneLoading&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt;):
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;indicator&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;stopAnimating&lt;/span&gt;()
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isHidden&lt;/span&gt; = &lt;span class=&quot;keyword&quot;&gt;true&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;failedLoading&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; error) &lt;span class=&quot;keyword&quot;&gt;where&lt;/span&gt; error == .&lt;span class=&quot;dotAccess&quot;&gt;invalidCredentials&lt;/span&gt;:
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;indicator&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;stopAnimating&lt;/span&gt;()
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isHidden&lt;/span&gt; = &lt;span class=&quot;keyword&quot;&gt;false&lt;/span&gt;
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; = &lt;span class=&quot;string&quot;&gt;&quot;Invalid&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;credentials&quot;&lt;/span&gt;
+                &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;sizeToFit&lt;/span&gt;()
+            &lt;span class=&quot;keyword&quot;&gt;default&lt;/span&gt;:
+                ...
+            }
+        }
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; viewDidLoad() {
+        &lt;span class=&quot;keyword&quot;&gt;super&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;viewDidLoad&lt;/span&gt;()
+        &lt;span class=&quot;call&quot;&gt;setupBindings&lt;/span&gt;()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then we’ll define some very simple business logic in our view model. User input is being constantly evaluated and considered valid enough for sending to our backend when the email field contains an &lt;code class=&quot;highlighter-rouge&quot;&gt;@&lt;/code&gt; and the password is four or more characters long. The observing view controller is continuously updated about what state the view model is in, and will toggle the enabled state of it’s login button as the user’s input changes. The login button’s tap event triggers a login request, and the view model notifies the view controller as soon as it’s loading state changes.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; LoginViewModel: &lt;span class=&quot;type&quot;&gt;LoginViewModelInputs&lt;/span&gt;, &lt;span class=&quot;call&quot;&gt;LoginViewModelOutputs&lt;/span&gt; {
+    ...
+
+    &lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; emailDidChange(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; sender: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt;) {
+        email = sender.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; ?? &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt;
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; passwordDidChange(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; sender: &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt;) {
+        password = sender.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; ?? &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt;
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;@objc&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; didPressLoginButton() {
+        changedLoadingState?(.loading)
+        api.&lt;span class=&quot;call&quot;&gt;login&lt;/span&gt;() { result &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+            &lt;span class=&quot;keyword&quot;&gt;switch&lt;/span&gt; result {
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;success&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user):
+                changedLoadingState?(.&lt;span class=&quot;call&quot;&gt;doneLoading&lt;/span&gt;(user))
+            &lt;span class=&quot;keyword&quot;&gt;case&lt;/span&gt; .&lt;span class=&quot;dotAccess&quot;&gt;failure&lt;/span&gt;(&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; error):
+                changedLoadingState?(.&lt;span class=&quot;call&quot;&gt;failedLoading&lt;/span&gt;(error))
+            }
+        }
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; email = &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt; {
+        &lt;span class=&quot;keyword&quot;&gt;didSet&lt;/span&gt; { userInputIsValid?(&lt;span class=&quot;call&quot;&gt;inputIsValid&lt;/span&gt;()) }
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; password = &lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt; {
+        &lt;span class=&quot;keyword&quot;&gt;didSet&lt;/span&gt; { userInputIsValid?(&lt;span class=&quot;call&quot;&gt;inputIsValid&lt;/span&gt;()) }
+    }
+
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; inputIsValid() -&amp;gt; &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt; {
+        &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;call&quot;&gt;emailIsValid&lt;/span&gt;(email) &amp;amp;&amp;amp; &lt;span class=&quot;call&quot;&gt;passwordIsValid&lt;/span&gt;(password)
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; emailIsValid(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt; {
+        &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; text.&lt;span class=&quot;call&quot;&gt;contains&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;@&quot;&lt;/span&gt;)
+    }
+    
+    &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; passwordIsValid(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) -&amp;gt; &lt;span class=&quot;type&quot;&gt;Bool&lt;/span&gt; {
+        &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; text.&lt;span class=&quot;property&quot;&gt;count&lt;/span&gt; &amp;gt;= &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finally, before we start writing tests, we’ll add a small extension to &lt;code class=&quot;highlighter-rouge&quot;&gt;UITextField&lt;/code&gt; which we’ll use for updating our fields programmatically.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;extension&lt;/span&gt; &lt;span class=&quot;type&quot;&gt;UITextField&lt;/span&gt; {
+    &lt;span class=&quot;keyword&quot;&gt;func&lt;/span&gt; update(&lt;span class=&quot;keyword&quot;&gt;_&lt;/span&gt; text: &lt;span class=&quot;type&quot;&gt;String&lt;/span&gt;) {
+        &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; = text
+        &lt;span class=&quot;keyword&quot;&gt;self&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;sendActions&lt;/span&gt;(for: .&lt;span class=&quot;dotAccess&quot;&gt;editingChanged&lt;/span&gt;)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;testing-testing&quot;&gt;Testing, testing…&lt;/h3&gt;
+
+&lt;p&gt;So, we’ve set up out controller and model, and now it’s time to take it for a spin. We’ll start by initalizing our view controller and run it’s &lt;code class=&quot;highlighter-rouge&quot;&gt;viewDidLoad&lt;/code&gt; method, where we ran the &lt;code class=&quot;highlighter-rouge&quot;&gt;setupBindnings&lt;/code&gt; method. By running &lt;code class=&quot;highlighter-rouge&quot;&gt;viewDidLoad&lt;/code&gt; rather than &lt;code class=&quot;highlighter-rouge&quot;&gt;setupBindnings&lt;/code&gt; directly, we are actually testing that this method will be triggered by the system when running the app.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; vc = &lt;span class=&quot;type&quot;&gt;LoginViewController&lt;/span&gt;()
+vc.&lt;span class=&quot;call&quot;&gt;viewDidLoad&lt;/span&gt;()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Alright, so we have our vc set up, and now we want to start by testing it’s default state. Since no input has yet been given, we want to verify that the info label is not showing and that the login button is disabled.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isHidden&lt;/span&gt;)
+assert(!vc.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isEnabled&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ok, our assertions passed. Next up, we’re going to enter a valid email and password and verify that this enables the login button. Note how we’re testing both our email and password validation logic as well as our UI’s response, all in a few lines.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;vc.&lt;span class=&quot;property&quot;&gt;emailField&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;update&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;joe@south.com&quot;&lt;/span&gt;)
+vc.&lt;span class=&quot;property&quot;&gt;passwordField&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;update&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;abca&quot;&lt;/span&gt;)
+&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isEnabled&lt;/span&gt;)
+&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;backgroundColor&lt;/span&gt; == .&lt;span class=&quot;dotAccess&quot;&gt;green&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Just to be sure, let’s verify that our loginButton is again disabled after changing the email adress being something invalid (not containing an @)&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;vc.&lt;span class=&quot;property&quot;&gt;emailField&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;update&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;joe.south.com&quot;&lt;/span&gt;)
+assert(!vc.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isEnabled&lt;/span&gt;)
+&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;loginButton&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;backgroundColor&lt;/span&gt; == .&lt;span class=&quot;dotAccess&quot;&gt;gray&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So far so good, but we haven’t really done anything yet that we could not do with UI tests. In a &lt;a href=&quot;https://mannberg.github.io/2018/12/19/mocking.html&quot;&gt;previous article&lt;/a&gt; I looked at how you can easily mock methods rather than entire objects, and we’re going to use that same approach here to simulate the user trying to log in with invalid credentials. Just like when we’re doing “regular” unit testing, we can have complete control over our dependencies, which means we can easily mock server responses to generate all kinds of different UI states.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;vc.&lt;span class=&quot;property&quot;&gt;viewModel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;api&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;login&lt;/span&gt; = { result &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+    result(.&lt;span class=&quot;dotAccess&quot;&gt;failure&lt;/span&gt;(.&lt;span class=&quot;dotAccess&quot;&gt;invalidCredentials&lt;/span&gt;))
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now, when “tapping” our button, we should immediately get an error, showing our infoLabel with the expected error message.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;vc.&lt;span class=&quot;property&quot;&gt;emailField&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;update&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;&quot;joe@south.com&quot;&lt;/span&gt;)
+vc.&lt;span class=&quot;property&quot;&gt;viewModel&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;didPressButton&lt;/span&gt;()
+assert(!vc.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isHidden&lt;/span&gt;)
+&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;text&lt;/span&gt; == &lt;span class=&quot;string&quot;&gt;&quot;Invalid&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;credentials&quot;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;While we’re at it, we might want to test our app’s behavior if our given credentials were instead valid.&lt;/p&gt;
+
+&lt;pre class=&quot;splash&quot;&gt;&lt;code&gt;&lt;span class=&quot;comment&quot;&gt;//we'll&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;change&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;our&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;mocked&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;response&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;successful...&lt;/span&gt;
+vc.&lt;span class=&quot;property&quot;&gt;viewModel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;api&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;login&lt;/span&gt; = { result &lt;span class=&quot;keyword&quot;&gt;in&lt;/span&gt;
+    &lt;span class=&quot;keyword&quot;&gt;let&lt;/span&gt; user = &lt;span class=&quot;type&quot;&gt;User&lt;/span&gt;()
+    &lt;span class=&quot;call&quot;&gt;result&lt;/span&gt;(.&lt;span class=&quot;dotAccess&quot;&gt;success&lt;/span&gt;(user))
+}
+
+&lt;span class=&quot;comment&quot;&gt;//then&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;try&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;login,&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;which&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;should&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;make&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;our&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;infoLabel&lt;/span&gt; &lt;span class=&quot;comment&quot;&gt;disappear&lt;/span&gt;
+vc.&lt;span class=&quot;property&quot;&gt;viewModel&lt;/span&gt;.&lt;span class=&quot;call&quot;&gt;didPressButton&lt;/span&gt;()
+&lt;span class=&quot;call&quot;&gt;assert&lt;/span&gt;(vc.&lt;span class=&quot;property&quot;&gt;infoLabel&lt;/span&gt;.&lt;span class=&quot;property&quot;&gt;isHidden&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Our tests passed! Although this is a rather trivial example, I think it’s not hard to see how this could easily be extended. If our app had a profile page for example, we should be able to mock a logged in user and verify that all the correct information was displayed. If we then wanted to change any field on our user, we should easily be able to do so by mocking some backend response and then again verify that our UI correctly displays the new information. Should we want to test that the UI correctly handles this same request failing, we should also be able to do so with very little extra ceremony.&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;We’ve seen how we could simulate user interaction and make this run as quickly as any suite of unit tests. We were able to do inline mocking of our backend, easily testing how our UI reacts to various weird states. One could say we’ve taken some powerful traits of unit tests (controlling dependencies, speed) and combined it with an equally powerful trait of UI tests (testing using interaction).&lt;/p&gt;
+
+&lt;p&gt;Testing business logic through the UI can be quite powerful. For example, we might write unit tests for an email validation method, but we might still forget to actually use that method in our app when when the user types in their value. By simulating input into a text field and observing the UI’s reaction to it, we test both the validation logic and that it’s actually used for text input. Of course, testing business logic only by observing the UI would result in a lot of boilerplate, so when we need some really thourough testing of our business logic, unit tests are probably the way to go.&lt;/p&gt;
+
+&lt;p&gt;One problem with this kind of testing is that we’re not only mocking our dependencies, but we’re kind of also mocking the actual app lifecycle. In our code example above, we manually called the &lt;code class=&quot;highlighter-rouge&quot;&gt;viewDidLoad&lt;/code&gt; method of our view controller, which would’ve been called by the system in a regular app session. But we might just as well have forgotten to call this or any other system-triggered events, which could render our tests useless at best, and hiding bugs at worst. 
+Similar problems could also arise if we were to write tests that simulated user interaction that would not be possible in the actual app.&lt;/p&gt;
+
+&lt;p&gt;So, the usual pros and cons. If you have thoughts on this and perhaps even experience of doing something similar in a project, I would really like to hear about it on &lt;a href=&quot;https://twitter.com/andersmannberg&quot;&gt;Twitter&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Thank you so much for reading!&lt;/p&gt;</content><author><name></name></author><summary type="html">Syntax highlighting powered by Splash</summary></entry><entry><title type="html">Avoid mocking by swapping method implementations</title><link href="/2018/12/19/mocking.html" rel="alternate" type="text/html" title="Avoid mocking by swapping method implementations" /><published>2018-12-19T21:00:00+01:00</published><updated>2018-12-19T21:00:00+01:00</updated><id>/2018/12/19/mocking</id><content type="html" xml:base="/2018/12/19/mocking.html">&lt;h6 id=&quot;syntax-highlighting-powered-by-splash&quot;&gt;Syntax highlighting powered by &lt;a href=&quot;https://github.com/JohnSundell/Splash&quot;&gt;Splash&lt;/a&gt;&lt;/h6&gt;
 
 &lt;p&gt;Often when we want to test code that depends on external resources such as a backend or a local database, we need to mock those dependencies. Mocking usually consists of defining a protocol which our other objects depend on rather than depending on a concrete implementation, as well as creating at least two classes/structs that implement that protocol - one that’s used in our app, and at least one mock version used for testing.&lt;/p&gt;
 
