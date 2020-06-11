@@ -13,7 +13,7 @@ dl, dd, ol, ul, figure {
 body {
   font: 400 16px/1.5 "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   color: #000000;
-  background-color: #ffffff;
+  background-color: whitesmoke;
   -webkit-text-size-adjust: 100%;
   -webkit-font-feature-settings: "kern" 1;
   -moz-font-feature-settings: "kern" 1;
@@ -71,13 +71,13 @@ li > ol {
  */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 400;
-  color: #343536; }
+  color: #2c2322; }
 
 /**
  * Links
  */
 a {
-  color: #343536;
+  color: #2c2322;
   text-decoration: none; }
   a:visited {
     color: #37445f; }
@@ -188,10 +188,13 @@ table {
  * Site header
  */
 .site-header {
-  border-top: 5px solid #424242;
-  border-bottom: 1px solid #e8e8e8;
-  min-height: 55.95px;
+  background-color: #2c2322;
+  padding: 30px;
   position: relative; }
+
+.subtitle {
+  color: #ffffff;
+  clear: left; }
 
 .site-title {
   font-size: 48px;
@@ -201,17 +204,17 @@ table {
   margin-bottom: 0;
   float: left; }
   .site-title, .site-title:visited {
-    color: #424242; }
+    color: #fa674d; }
 
 .site-nav {
-  float: right;
+  float: left;
   line-height: 54px; }
   .site-nav .nav-trigger {
     display: none; }
   .site-nav .menu-icon {
     display: none; }
   .site-nav .page-link {
-    color: #000000;
+    color: #d2d55e;
     line-height: 1.5; }
     .site-nav .page-link:not(:last-child) {
       margin-right: 20px; }
@@ -220,7 +223,7 @@ table {
       position: absolute;
       top: 9px;
       right: 15px;
-      background-color: #ffffff;
+      background-color: whitesmoke;
       border: 1px solid #e8e8e8;
       border-radius: 5px;
       text-align: right; }
@@ -331,6 +334,7 @@ table {
 
 .post-link {
   display: block;
+  font-weight: 500;
   font-size: 24px; }
 
 /**
@@ -340,10 +344,11 @@ table {
   margin-bottom: 30px; }
 
 .post-title {
-  font-size: 42px;
+  font-size: 32px;
+  font-weight: 500;
   letter-spacing: -1px;
   line-height: 1;
-  color: #343536; }
+  color: #2c2322; }
   @media screen and (max-width: 800px) {
     .post-title {
       font-size: 36px; } }
@@ -356,7 +361,10 @@ table {
       .post-content h2 {
         font-size: 28px; } }
   .post-content h3 {
-    font-size: 26px; }
+    font-size: 20.8px;
+    font-weight: 500;
+    padding-top: 10px;
+    padding-bottom: 10px; }
     @media screen and (max-width: 800px) {
       .post-content h3 {
         font-size: 22px; } }
@@ -519,51 +527,62 @@ table {
   .highlight .il {
     color: #099; }
 
-/**
- *  Example CSS file that can be used to style Splash HTML output
- *  Copyright (c) John Sundell 2018
- *  MIT license - see LICENSE.md
- */
+/* Code */
+code {
+  font-family: "Code", monospace; }
+
+/* This hack is required since Firefox isn't able to render Source Code Pro */
+@supports (-moz-appearance: none) {
+  code {
+    font-family: monospace; } }
+article p code {
+  background-color: #e2e2e2;
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 0.9em; }
+
 pre {
   margin-bottom: 1.5em;
-  background-color: #1a1a1a;
-  padding: 16px 0;
-  border-radius: 16px; }
+  background-color: transparent;
+  padding: 4px 0;
+  border-radius: 4px; }
 
 pre code {
-  background-color: #1a1a1a;
-  font-family: monospace;
   display: block;
-  padding: 0 20px;
-  color: #fff;
+  background-color: #2c2322;
+  padding: 20px 20px 20px 20px;
+  border-radius: 4px;
+  color: #ffffff;
   line-height: 1.4em;
-  font-size: 0.95em;
+  font-size: 1em;
   overflow-x: auto;
-  white-space: pre; }
+  white-space: pre;
+  -webkit-overflow-scrolling: touch; }
 
 pre code .keyword {
-  color: #fd7cb2; }
+  color: #fa674d; }
 
 pre code .type {
-  color: #8ed1c3; }
+  color: #66d192; }
 
 pre code .call {
-  color: #fff; }
+  color: #53cee4; }
 
 pre code .property {
-  color: #fff; }
+  color: #e3eb9f; }
 
 pre code .number {
-  color: #db6f57; }
+  color: #f7ba76; }
 
 pre code .string {
-  color: #fd8273; }
+  color: #fa641e; }
 
 pre code .comment {
   color: #6b8a94; }
 
 pre code .dotAccess {
-  color: #c8e9b9; }
+  color: #d2d55e; }
 
 pre code .preprocessing {
-  color: #fba15e; }
+  color: #b68a00; }
