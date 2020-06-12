@@ -553,7 +553,7 @@ pre code {
   background-color: #2c2322;
   padding: 20px 20px 20px 20px;
   border-radius: 4px;
-  color: #ffffff;
+  color: #ffedd7;
   line-height: 1.4em;
   font-size: 1em;
   overflow-x: auto;
@@ -561,28 +561,28 @@ pre code {
   -webkit-overflow-scrolling: touch; }
 
 pre code .keyword {
-  color: #fa674d; }
+  color: #fc806a; }
 
 pre code .type {
-  color: #66d192; }
+  color: #ffd06a; }
 
 pre code .call {
-  color: #53cee4; }
+  color: #ffd6a7; }
 
 pre code .property {
-  color: #e3eb9f; }
+  color: #ffd6a7; }
 
 pre code .number {
-  color: #f7ba76; }
+  color: #ffd6a7; }
 
 pre code .string {
-  color: #fa641e; }
+  color: #ffd6a7; }
 
 pre code .comment {
   color: #6b8a94; }
 
 pre code .dotAccess {
-  color: #d2d55e; }
+  color: #fce877; }
 
 pre code .preprocessing {
   color: #b68a00; }
