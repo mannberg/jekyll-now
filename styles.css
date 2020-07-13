@@ -193,7 +193,8 @@ article p code {
 }
 
 pre {
-    margin-bottom: 1.5em;
+    margin-top: 20px;
+    margin-bottom: 40px;
     padding: 4px 0;
     border-radius: 4px;
     border: 1px solid #B8D5D1;
